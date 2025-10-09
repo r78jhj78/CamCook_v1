@@ -23,6 +23,7 @@ class RecetasViewModel : ViewModel() {
     val isLoading = _isLoading.asStateFlow()
 
     private val listeners = mutableListOf<ListenerRegistration>()
+    private val firestore = FirebaseFirestore.getInstance()
 
     init {
         // Escuchar cambios en todas las recetas al iniciar el ViewModel
@@ -102,4 +103,21 @@ class RecetasViewModel : ViewModel() {
         // Cancelar todos los listeners al destruir el ViewModel
         listeners.forEach { it.remove() }
     }
+
+    fun sumarVistaReceta(recetaId: String) {
+        viewModelScope.launch {
+            val recetaRef = firestore.collection("recetas").document(recetaId)
+
+            firestore.runTransaction { transaction ->
+                val snapshot = transaction.get(recetaRef)
+                val vistasActuales = snapshot.getLong("popup_clicks") ?: 0
+                transaction.update(recetaRef, "popup_clicks", vistasActuales + 1)
+            }.addOnSuccessListener {
+                println("✅ Vista incrementada correctamente.")
+            }.addOnFailureListener {
+                it.printStackTrace()
+            }
+        }
+    }
+
 }

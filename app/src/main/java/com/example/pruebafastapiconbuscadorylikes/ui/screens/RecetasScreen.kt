@@ -436,7 +436,10 @@ fun RecetasScreen(
                         RecetaCard(
                             receta = receta,
                             onLike = { viewModel.darLike(receta.id, userId) },
-                            onClick = { onRecetaClick(receta) }
+                            onClick = {
+                                viewModel.sumarVistaReceta(receta.id)
+                                onRecetaClick(receta)
+                            }
                         )
                     }
                 }
