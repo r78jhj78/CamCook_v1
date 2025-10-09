@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "163492793985",
+    "project_id": "imagenes-recetas-b9e6d",
+    "storage_bucket": "imagenes-recetas-b9e6d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:163492793985:android:ad0a4401330660fe110780",
+        "android_client_info": {
+          "package_name": "com.example.camcook"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjyDmyQSnHVVzrDubspCVNsSJ-xR1cu-o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:163492793985:android:cbf3ef4f15cb71c5110780",
+        "android_client_info": {
+          "package_name": "com.example.pruebafastapiconbuscadorylikes"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjyDmyQSnHVVzrDubspCVNsSJ-xR1cu-o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:163492793985:android:bf207679159721a3110780",
+        "android_client_info": {
+          "package_name": "com.example.yolo_cam_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjyDmyQSnHVVzrDubspCVNsSJ-xR1cu-o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
