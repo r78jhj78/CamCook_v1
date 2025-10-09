@@ -41,7 +41,70 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 
+/*
+@Composable
+fun RecetasScreen(
+    viewModel: RecetasViewModel,
+    userId: String,
+    onRecetaClick: (Receta) -> Unit
+) {
+    val recetas by viewModel.recetas.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    var query by remember { mutableStateOf("") }
 
+    LaunchedEffect(Unit) {
+        viewModel.escucharTodasRecetas()
+    }
+
+    Scaffold(
+        topBar = {
+            SmallTopAppBar(title = { Text("🍳 Recetario") })
+        }
+    ) { padding ->
+        Column(
+            Modifier
+                .padding(padding)
+                .padding(16.dp)
+                .fillMaxSize()
+        ) {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                label = { Text("Buscar receta...") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            Button(
+                onClick = { viewModel.buscarRecetas(query) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("🔍 Buscar")
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            if (isLoading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                LazyColumn {
+                    items(recetas) { receta ->
+                        RecetaCard(
+                            receta = receta,
+                            onLike = { viewModel.darLike(receta.id, userId) },
+                            onClick = { onRecetaClick(receta) } // Aquí se llama el callback
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/*
 @Composable
 fun RecetasScreen(viewModel: RecetasViewModel, userId: String) {
     val recetas by viewModel.recetas.collectAsState()
@@ -100,7 +163,7 @@ fun RecetasScreen(viewModel: RecetasViewModel, userId: String) {
         }
     }
 }
-
+*/
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SmallTopAppBar(title: @Composable () -> Unit) {
@@ -114,7 +177,11 @@ fun SmallTopAppBar(title: @Composable () -> Unit) {
 }
 
 @Composable
-fun RecetaCard(receta: Receta, onLike: () -> Unit) {
+fun RecetaCard(
+    receta: Receta,
+    onLike: () -> Unit,
+    onClick: () -> Unit
+) {
     var expanded by remember { mutableStateOf(false) }
     val dioLike = receta.liked_by.isNotEmpty()
 
@@ -143,9 +210,9 @@ fun RecetaCard(receta: Receta, onLike: () -> Unit) {
                     tint = Color.Gray
                 )
             }
-
-            if (receta.descripcion.isNotBlank()) {
+            if (expanded && receta.descripcion.isNotBlank()) {
                 Text(receta.descripcion, style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(4.dp))
             }
 
             Spacer(Modifier.height(4.dp))
@@ -161,7 +228,7 @@ fun RecetaCard(receta: Receta, onLike: () -> Unit) {
                     Text(if (dioLike) "💔 Quitar Like" else "❤️ Like")
                 }
             }
-
+            /*
             // 🔸 Contenido expandido
             if (expanded) {
                 Spacer(Modifier.height(8.dp))
@@ -258,11 +325,194 @@ fun RecetaCard(receta: Receta, onLike: () -> Unit) {
                 }
 
                 Spacer(Modifier.height(8.dp))
+            }*/
+        }
+    }
+}
+
+@Composable
+fun InfoChip(text: String) {
+    Surface(
+        color = Color(0xFFF3E5F5),
+        shape = MaterialTheme.shapes.small,
+        tonalElevation = 2.dp
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = Color(0xFF4A148C)
+        )
+    }
+}
+@Composable
+fun DetalleRecetaScreen(
+    receta: Receta,
+    onBack: () -> Unit,
+    onLike: () -> Unit
+) {
+    Scaffold(
+        topBar = {
+            SmallTopAppBar(
+                title = { Text(receta.titulo) }
+                // Puedes agregar botón de "back" aquí si quieres
+            )
+        }
+    ) { padding ->
+        Column(
+            Modifier
+                .padding(padding)
+                .padding(16.dp)
+                .fillMaxSize()
+        ) {
+            Text(receta.descripcion, style = MaterialTheme.typography.bodyMedium)
+
+            Spacer(Modifier.height(12.dp))
+
+            // Botón para dar like
+            Button(onClick = onLike, modifier = Modifier.fillMaxWidth()) {
+                Text(if (receta.liked_by.isNotEmpty()) "💔 Quitar Like" else "❤️ Like")
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
+                Text("⬅️ Volver")
+            }
+        }
+    }
+}
+*/
+@Composable
+fun RecetasScreen(
+    viewModel: RecetasViewModel,
+    userId: String,
+    onRecetaClick: (Receta) -> Unit
+) {
+    val recetas by viewModel.recetas.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    var query by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        viewModel.escucharTodasRecetas()
+    }
+
+    Scaffold(
+        topBar = {
+            SmallTopAppBar(title = { Text("🍳 Recetario") })
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .padding(16.dp)
+                .fillMaxSize()
+        ) {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                label = { Text("Buscar receta...") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = { viewModel.buscarRecetas(query) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("🔍 Buscar")
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                LazyColumn {
+                    items(recetas) { receta ->
+                        RecetaCard(
+                            receta = receta,
+                            onLike = { viewModel.darLike(receta.id, userId) },
+                            onClick = { onRecetaClick(receta) }
+                        )
+                    }
+                }
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SmallTopAppBar(title: @Composable () -> Unit) {
+    TopAppBar(
+        title = title,
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            titleContentColor = MaterialTheme.colorScheme.onPrimary
+        )
+    )
+}
+
+@Composable
+fun RecetaCard(
+    receta: Receta,
+    onLike: () -> Unit,
+    onClick: () -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val dioLike = receta.liked_by.isNotEmpty()
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            // Cambiado: aquí el click abre el detalle
+            .clickable { onClick() }
+            .animateContentSize(animationSpec = spring()),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            // Encabezado
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    receta.titulo,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+
+                Icon(
+                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null,
+                    tint = Color.Gray
+                )
+            }
+
+            if (expanded && receta.descripcion.isNotBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(receta.descripcion, style = MaterialTheme.typography.bodyMedium)
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Likes y vistas
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("❤️ ${receta.likes} likes  👁️ ${receta.popup_clicks} vistas")
+                TextButton(onClick = onLike) {
+                    Text(if (dioLike) "💔 Quitar Like" else "❤️ Like")
+                }
+            }
+        }
+    }
+}
 @Composable
 fun InfoChip(text: String) {
     Surface(

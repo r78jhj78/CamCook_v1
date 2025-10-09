@@ -18,7 +18,9 @@ import com.example.pruebafastapiconbuscadorylikes.ui.screens.RecetasScreen
 import androidx.compose.runtime.*
 import com.example.pruebafastapiconbuscadorylikes.auth.LoginScreen
 import com.example.pruebafastapiconbuscadorylikes.auth.RegisterScreen
-
+import com.example.pruebafastapiconbuscadorylikes.model.Receta
+import com.example.pruebafastapiconbuscadorylikes.ui.screens.DetalleRecetaScreen
+/*
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,6 +28,8 @@ class MainActivity : ComponentActivity() {
             var currentScreen by remember { mutableStateOf("login") }
             var userId by remember { mutableStateOf("") }
             val viewModel: RecetasViewModel = viewModel()
+
+            var recetaSeleccionada by remember { mutableStateOf<Receta?>(null) }
 
             when (currentScreen) {
                 "login" -> LoginScreen(
@@ -44,7 +48,95 @@ class MainActivity : ComponentActivity() {
                     onNavigateToLogin = { currentScreen = "login" }
                 )
 
-                "recetas" -> RecetasScreen(viewModel, userId)
+                "recetas" -> RecetasScreen(
+                    viewModel = viewModel,
+                    userId = userId,
+                    onRecetaClick = { receta ->
+                        recetaSeleccionada = receta
+                        currentScreen = "detalleReceta"
+                    }
+                )
+
+                "detalleReceta" -> {
+                    recetaSeleccionada?.let { receta ->
+                        DetalleRecetaScreen(
+                            receta = receta,
+                            onBack = { currentScreen = "recetas" },
+                            onLike = { viewModel.darLike(receta.id, userId) }
+                        )
+                    } ?: run {
+                        currentScreen = "recetas"
+                    }
+                }
+            }
+        }
+    }
+}
+*/
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            var currentScreen by remember { mutableStateOf("login") }
+            var userId by remember { mutableStateOf("") }
+            val viewModel: RecetasViewModel = viewModel()
+
+            // Almacena la receta seleccionada para mostrar en detalle
+            var recetaSeleccionada by remember { mutableStateOf<Receta?>(null) }
+
+            when (currentScreen) {
+                "login" -> {
+                    LoginScreen(
+                        onLoginSuccess = { uid ->
+                            userId = uid
+                            currentScreen = "recetas"
+                        },
+                        onNavigateToRegister = {
+                            currentScreen = "register"
+                        }
+                    )
+                }
+
+                "register" -> {
+                    RegisterScreen(
+                        onRegisterSuccess = { uid ->
+                            userId = uid
+                            currentScreen = "recetas"
+                        },
+                        onNavigateToLogin = {
+                            currentScreen = "login"
+                        }
+                    )
+                }
+
+                "recetas" -> {
+                    RecetasScreen(
+                        viewModel = viewModel,
+                        userId = userId,
+                        onRecetaClick = { receta ->
+                            // cuando se clickea una receta, la guardamos y navegamos al detalle
+                            recetaSeleccionada = receta
+                            currentScreen = "detalleReceta"
+                        }
+                    )
+                }
+
+                "detalleReceta" -> {
+                    recetaSeleccionada?.let { receta ->
+                        DetalleRecetaScreen(
+                            receta = receta,
+                            onBack = {
+                                currentScreen = "recetas"
+                            },
+                            onLike = {
+                                viewModel.darLike(receta.id, userId)
+                            }
+                        )
+                    } ?: run {
+                        // si por alguna razón no hay receta seleccionada, volvemos
+                        currentScreen = "recetas"
+                    }
+                }
             }
         }
     }
