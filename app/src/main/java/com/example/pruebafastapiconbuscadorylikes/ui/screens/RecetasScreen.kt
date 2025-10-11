@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material3.Button
@@ -60,7 +61,7 @@ fun SmallTopAppBar(
         )
     )
 }
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecetasScreen(
     viewModel: RecetasViewModel,
@@ -69,7 +70,124 @@ fun RecetasScreen(
     onGoToProfile: () -> Unit,
     onGoToFavorites: () -> Unit,
     onGoToSettings: () -> Unit,
-    onGoBackToInicio: () -> Unit
+    onGoBackToInicio: () -> Unit // Este se usará para volver al inicio
+) {
+    val recetas by viewModel.recetas.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    var query by remember { mutableStateOf("") }
+    val listState = rememberSaveable(saver = LazyListState.Saver) {
+        LazyListState()
+    }
+
+    LaunchedEffect(recetas) {
+        if (recetas.isEmpty()) {
+            viewModel.escucharTodasRecetas()
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("🔍 Buscar Receta") },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        // Limpiar búsqueda y volver a recetas completas
+                        query = ""
+                        viewModel.escucharTodasRecetas()
+                        onGoBackToInicio()
+                    }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onGoToProfile) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Perfil"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
+        },
+        bottomBar = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp, horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Button(onClick = onGoToFavorites) {
+                    Text("Favoritos")
+                }
+                Button(onClick = onGoToSettings) {
+                    Text("Configuración")
+                }
+                Button(onClick = onGoBackToInicio) {
+                    Text("Inicio")
+                }
+            }
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .padding(16.dp)
+                .fillMaxSize()
+        ) {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                label = { Text("Buscar receta...") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = { viewModel.buscarRecetas(query) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("🔍 Buscar")
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                LazyColumn(state = listState) {
+                    items(recetas) { receta ->
+                        RecetaCard(
+                            receta = receta,
+                            onLike = { viewModel.darLike(receta.id, userId) },
+                            onClick = {
+                                viewModel.sumarVistaReceta(receta.id)
+                                onRecetaClick(receta)
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/*
+@Composable
+fun RecetasScreen(
+    viewModel: RecetasViewModel,
+    userId: String,
+    onRecetaClick: (Receta) -> Unit,
+    onGoToProfile: () -> Unit,
+    onGoToFavorites: () -> Unit,
+    onGoToSettings: () -> Unit,
+    onGoBackToInicio: () -> Unit,
 ) {
     val recetas by viewModel.recetas.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -162,7 +280,7 @@ fun RecetasScreen(
         }
     }
 }
-
+*/
 
 
 @OptIn(ExperimentalMaterial3Api::class)
