@@ -7,7 +7,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.ExpandLess
@@ -37,9 +39,220 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButtonDefaults.Icon
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.saveable.rememberSaveable
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SmallTopAppBar(
+    title: @Composable () -> Unit,
+    actions: @Composable RowScope.() -> Unit = {}
+) {
+    TopAppBar(
+        title = title,
+        actions = actions,
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            titleContentColor = MaterialTheme.colorScheme.onPrimary
+        )
+    )
+}
+
+@Composable
+fun RecetasScreen(
+    viewModel: RecetasViewModel,
+    userId: String,
+    onRecetaClick: (Receta) -> Unit,
+    onGoToProfile: () -> Unit,
+    onGoToFavorites: () -> Unit,
+    onGoToSettings: () -> Unit,
+    onGoBackToInicio: () -> Unit
+) {
+    val recetas by viewModel.recetas.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    var query by remember { mutableStateOf("") }
+    val listState = rememberSaveable(saver = LazyListState.Saver) {
+        LazyListState()
+    }
+
+    LaunchedEffect(recetas) {
+        if (recetas.isEmpty()) {
+            viewModel.escucharTodasRecetas()
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            SmallTopAppBar(
+                title = { Text("🍳 Recetario") },
+                actions = {
+                    IconButton(onClick = onGoToProfile) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Perfil"
+                        )
+                    }
+                }
+            )
+        },
+        bottomBar = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp, horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Button(onClick = onGoToFavorites) {
+                    Text("Favoritos")
+                }
+                Button(onClick = onGoToSettings) {
+                    Text("Configuración")
+                }
+                Button(onClick = onGoBackToInicio) {
+                    Text("Inicio")
+                }
+            }
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .padding(16.dp)
+                .fillMaxSize()
+        ) {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                label = { Text("Buscar receta...") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = { viewModel.buscarRecetas(query) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("🔍 Buscar")
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                LazyColumn(state = listState) {
+                    items(recetas) { receta ->
+                        RecetaCard(
+                            receta = receta,
+                            onLike = { viewModel.darLike(receta.id, userId) },
+                            onClick = {
+                                viewModel.sumarVistaReceta(receta.id)
+                                onRecetaClick(receta)
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SmallTopAppBar(title: @Composable () -> Unit) {
+    TopAppBar(
+        title = title,
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            titleContentColor = MaterialTheme.colorScheme.onPrimary
+        )
+    )
+}
+
+@Composable
+fun RecetaCard(
+    receta: Receta,
+    onLike: () -> Unit,
+    onClick: () -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val dioLike = receta.liked_by.isNotEmpty()
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            // Cambiado: aquí el click abre el detalle
+            .clickable { onClick() }
+            .animateContentSize(animationSpec = spring()),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            // Encabezado
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    receta.titulo,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+
+                Icon(
+                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null,
+                    tint = Color.Gray
+                )
+            }
+
+            if (expanded && receta.descripcion.isNotBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(receta.descripcion, style = MaterialTheme.typography.bodyMedium)
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Likes y vistas
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("❤️ ${receta.likes} likes  👁️ ${receta.popup_clicks} vistas")
+                TextButton(onClick = onLike) {
+                    Text(if (dioLike) "💔 Quitar Like" else "❤️ Like")
+                }
+            }
+        }
+    }
+}
+@Composable
+fun InfoChip(text: String) {
+    Surface(
+        color = Color(0xFFF3E5F5),
+        shape = MaterialTheme.shapes.small,
+        tonalElevation = 2.dp
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = Color(0xFF4A148C)
+        )
+    }
+}
+
+
+
+
+
 
 /*
 @Composable
@@ -383,151 +596,3 @@ fun DetalleRecetaScreen(
     }
 }
 */
-@Composable
-fun RecetasScreen(
-    viewModel: RecetasViewModel,
-    userId: String,
-    onRecetaClick: (Receta) -> Unit
-) {
-    val recetas by viewModel.recetas.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    var query by remember { mutableStateOf("") }
-
-    LaunchedEffect(Unit) {
-        viewModel.escucharTodasRecetas()
-    }
-
-    Scaffold(
-        topBar = {
-            SmallTopAppBar(title = { Text("🍳 Recetario") })
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .padding(16.dp)
-                .fillMaxSize()
-        ) {
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                label = { Text("Buscar receta...") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-                onClick = { viewModel.buscarRecetas(query) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("🔍 Buscar")
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            if (isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                LazyColumn {
-                    items(recetas) { receta ->
-                        RecetaCard(
-                            receta = receta,
-                            onLike = { viewModel.darLike(receta.id, userId) },
-                            onClick = {
-                                viewModel.sumarVistaReceta(receta.id)
-                                onRecetaClick(receta)
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SmallTopAppBar(title: @Composable () -> Unit) {
-    TopAppBar(
-        title = title,
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            titleContentColor = MaterialTheme.colorScheme.onPrimary
-        )
-    )
-}
-
-@Composable
-fun RecetaCard(
-    receta: Receta,
-    onLike: () -> Unit,
-    onClick: () -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val dioLike = receta.liked_by.isNotEmpty()
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            // Cambiado: aquí el click abre el detalle
-            .clickable { onClick() }
-            .animateContentSize(animationSpec = spring()),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            // Encabezado
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    receta.titulo,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
-                )
-
-                Icon(
-                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = null,
-                    tint = Color.Gray
-                )
-            }
-
-            if (expanded && receta.descripcion.isNotBlank()) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(receta.descripcion, style = MaterialTheme.typography.bodyMedium)
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Likes y vistas
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("❤️ ${receta.likes} likes  👁️ ${receta.popup_clicks} vistas")
-                TextButton(onClick = onLike) {
-                    Text(if (dioLike) "💔 Quitar Like" else "❤️ Like")
-                }
-            }
-        }
-    }
-}
-@Composable
-fun InfoChip(text: String) {
-    Surface(
-        color = Color(0xFFF3E5F5),
-        shape = MaterialTheme.shapes.small,
-        tonalElevation = 2.dp
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.bodySmall,
-            color = Color(0xFF4A148C)
-        )
-    }
-}

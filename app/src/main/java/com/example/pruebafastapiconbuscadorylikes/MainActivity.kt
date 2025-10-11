@@ -124,25 +124,45 @@ class MainActivity : ComponentActivity() {
                         userId = userId,
                         onRecetaClick = { receta ->
                             val recetaJson = Uri.encode(Gson().toJson(receta))
-                            navController.navigate("${Routes.DETALLE_RECETA}/$recetaJson")
+                            navController.navigate("detalle_receta/${receta.id}")
+                        },
+                        onGoToProfile = {
+                            // Navega a pantalla de perfil
+                            navController.navigate("perfil")
+                        },
+                        onGoToFavorites = {
+                            // Navega a pantalla favoritos
+                            navController.navigate("favoritos")
+                        },
+                        onGoToSettings = {
+                            // Navega a configuración
+                            navController.navigate("configuracion")
+                        },
+                        onGoBackToInicio = {
+                            // Regresa a esta misma pantalla "Recetas" limpiando el backstack si quieres
+                            navController.navigate(Routes.RECETAS) {
+                                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                launchSingleTop = true
+                            }
                         }
                     )
                 }
 
-                composable(
-                    route = "${Routes.DETALLE_RECETA}/{recetaJson}",
-                    arguments = listOf(navArgument("recetaJson") {
-                        type = NavType.StringType
-                    })
-                ) { backStackEntry ->
-                    val recetaJson = backStackEntry.arguments?.getString("recetaJson")
-                    val receta = Gson().fromJson(recetaJson, Receta::class.java)
 
-                    DetalleRecetaScreen(
-                        receta = receta,
-                        onBack = { navController.popBackStack() },
-                        onLike = { viewModel.darLike(receta.id, userId) }
-                    )
+                composable(
+                    route = "detalle_receta/{recetaId}",
+                    arguments = listOf(navArgument("recetaId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val recetaId = backStackEntry.arguments?.getString("recetaId") ?: return@composable
+                    val recetas by viewModel.recetas.collectAsState()
+                    val receta = recetas.find { it.id == recetaId }
+                    if (receta != null) {
+                        DetalleRecetaScreen(
+                            receta = receta,
+                            onBack = { navController.popBackStack() },
+                            onLike = { viewModel.darLike(receta.id, userId) }
+                        )
+                    }
                 }
             }
         }

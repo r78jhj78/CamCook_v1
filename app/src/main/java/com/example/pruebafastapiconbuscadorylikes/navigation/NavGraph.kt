@@ -11,13 +11,22 @@ import com.example.pruebafastapiconbuscadorylikes.ui.RecetasViewModel
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.RecetasScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.DetalleRecetaScreen
 import androidx.navigation.NavType
+import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import com.google.gson.Gson
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 
 object Routes {
     const val LOGIN = "login"
     const val REGISTER = "register"
     const val RECETAS = "recetas"
     const val DETALLE_RECETA = "detalle_receta"
+}
+sealed class Screen(val route: String) {
+    object RecetasList : Screen("recetas_list")
+    object DetalleReceta : Screen("detalle_receta/{recetaId}") {
+        fun createRoute(recetaId: String) = "detalle_receta/$recetaId"
+    }
 }
