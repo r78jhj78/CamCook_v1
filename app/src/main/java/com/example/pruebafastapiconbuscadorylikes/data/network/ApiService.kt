@@ -5,14 +5,15 @@ import retrofit2.http.*
 data class LikeRequest(val uid: String)
 data class ViewRequest(val uid: String)
 data class LikeResponse(val message: String)
+data class IdsResponse(val ids: List<String>)
 
 interface ApiService {
 
     // Buscar recetas
-    @GET("buscar")
+    @GET("buscar_ids")
     suspend fun buscarRecetas(
         @Query("query") query: String
-    ): ApiResponse
+    ): IdsResponse
 
     @POST("receta/{receta_id}/like")
     suspend fun darLike(

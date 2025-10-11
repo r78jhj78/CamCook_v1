@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.example.pruebafastapiconbuscadorylikes.data.network.ViewRequest
+import kotlinx.coroutines.tasks.await
 
 class RecetasViewModel : ViewModel() {
 
@@ -35,8 +36,29 @@ class RecetasViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
+                // 🔸 1. Buscar en OpenSearch -> obtener IDs
                 val response = RetrofitClient.api.buscarRecetas(query)
-                _recetas.value = response.resultados
+                val ids = response.ids
+
+                // 🔸 2. Limpiar escuchas anteriores si quieres
+                listeners.forEach { it.remove() }
+                listeners.clear()
+
+                // 🔸 3. Obtener recetas desde Firestore usando los IDs
+                val db = FirebaseFirestore.getInstance()
+                val recetasRef = db.collection("recetas")
+
+                val recetas = ids.mapNotNull { id ->
+                    try {
+                        val doc = recetasRef.document(id).get().await()
+                        doc.toObject(Receta::class.java)?.copy(id = doc.id)
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+
+                _recetas.value = recetas
+
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
