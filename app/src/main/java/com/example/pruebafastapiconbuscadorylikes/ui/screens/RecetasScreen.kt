@@ -12,6 +12,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material3.Button
@@ -40,30 +42,24 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButtonDefaults.Icon
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.RestaurantMenu
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.saveable.rememberSaveable
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SmallTopAppBar(
-    title: @Composable () -> Unit,
-    actions: @Composable RowScope.() -> Unit = {}
-) {
-    TopAppBar(
-        title = title,
-        actions = actions,
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            titleContentColor = MaterialTheme.colorScheme.onPrimary
-        )
-    )
-}
+import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.example.pruebafastapiconbuscadorylikes.utils.PermissionRequester
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecetasScreen(
+    navController: NavController,
     viewModel: RecetasViewModel,
     userId: String,
     onRecetaClick: (Receta) -> Unit,
@@ -114,20 +110,47 @@ fun RecetasScreen(
             )
         },
         bottomBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp, horizontal = 16.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
+            BottomAppBar(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
-                Button(onClick = onGoToFavorites) {
-                    Text("Favoritos")
+                IconButton(onClick = onGoBackToInicio, modifier = Modifier.weight(1f)) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.List, contentDescription = "Recetas")
+                        Text("Recetas", style = MaterialTheme.typography.labelSmall)
+                    }
                 }
-                Button(onClick = onGoToSettings) {
-                    Text("Configuración")
+
+                val context = LocalContext.current
+                var shouldRequestPermission by remember { mutableStateOf(false) }
+
+                IconButton(
+                    onClick = {
+                        shouldRequestPermission = true
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.CameraAlt, contentDescription = "Cámara")
+                        Text("Cámara", style = MaterialTheme.typography.labelSmall)
+                    }
                 }
-                Button(onClick = onGoBackToInicio) {
-                    Text("Inicio")
+
+                if (shouldRequestPermission) {
+                    PermissionRequester(
+                        permission = android.Manifest.permission.CAMERA,
+                        onPermissionGranted = {
+                            shouldRequestPermission = false
+                            navController.navigate("camera")
+                        }
+                    )
+                }
+
+                IconButton(onClick = onGoToFavorites, modifier = Modifier.weight(1f)) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.RestaurantMenu, contentDescription = "Ingredientes")
+                        Text("Ingredientes", style = MaterialTheme.typography.labelSmall)
+                    }
                 }
             }
         }

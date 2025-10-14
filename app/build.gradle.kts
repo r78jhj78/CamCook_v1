@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.extended)
+    implementation(libs.firebase.crashlytics.buildtools)
 
     // Test
     testImplementation(libs.junit)
@@ -92,4 +93,16 @@ dependencies {
 
     implementation("androidx.navigation:navigation-compose:2.7.6")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4")
+
+    //CAMARA
+    implementation("androidx.camera:camera-core:1.3.1")
+    implementation("androidx.camera:camera-camera2:1.3.1")
+    implementation("androidx.camera:camera-lifecycle:1.3.1")
+    implementation("androidx.camera:camera-view:1.3.1")
+    implementation("androidx.camera:camera-video:1.3.1")
+    implementation("androidx.camera:camera-extensions:1.3.1")
+    implementation("androidx.compose.runtime:runtime-livedata:1.5.4")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
+    // Guava para ListenableFuture
+    implementation("com.google.guava:guava:31.1-android")
 }
