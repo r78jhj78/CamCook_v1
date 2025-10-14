@@ -60,12 +60,16 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.camera.view.PreviewView
+import com.example.pruebafastapiconbuscadorylikes.model.Receta
+import com.example.pruebafastapiconbuscadorylikes.ui.screens.PerfilScreen
+import com.example.pruebafastapiconbuscadorylikes.ui.screens.PreviewRecetaDialog
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,6 +77,8 @@ class MainActivity : ComponentActivity() {
             val navController = rememberNavController()
             val viewModel: RecetasViewModel = viewModel()
             var userId by remember { mutableStateOf("") }
+            var recetaDetectada by remember { mutableStateOf<Receta?>(null) }
+            var mostrarDialogo by remember { mutableStateOf(false) }
 
             NavHost(
                 navController = navController,
@@ -154,6 +160,7 @@ class MainActivity : ComponentActivity() {
                     val context = LocalContext.current
                     val roboflowService = remember { RoboflowService(context) }
                     val scope = rememberCoroutineScope()
+                    var mostrarDialogoSimple by remember { mutableStateOf(false) }
 
                     var showDialog by remember { mutableStateOf(false) }
                     var dialogMessage by remember { mutableStateOf("") }
@@ -164,13 +171,13 @@ class MainActivity : ComponentActivity() {
                     }
 
                     if (showDialog) {
-                        AlertDialog(
-                            onDismissRequest = { showDialog = false },
-                            title = { Text("Información") },
-                            text = { Text(dialogMessage) },
-                            confirmButton = {
-                                Button(onClick = { showDialog = false }) {
-                                    Text("OK")
+                        PreviewRecetaDialog(
+                            show = mostrarDialogo,
+                            receta = recetaDetectada,
+                            onDismiss = { mostrarDialogo = false },
+                            onVerReceta = {
+                                recetaDetectada?.let {
+                                    navController.navigate("detalle_receta/${it.id}")
                                 }
                             }
                         )
@@ -185,39 +192,43 @@ class MainActivity : ComponentActivity() {
                                 onSuccess = { detections ->
                                     if (detections.isNotEmpty()) {
                                         val ingrediente = detections[0].label
-                                        showDialogMessage("Se detectó: $ingrediente")
 
-                                        scope.launch(Dispatchers.IO) {
-                                            try {
-                                                val respuesta = RetrofitClient.api.buscarRecetas(ingrediente)
-                                                if (respuesta.ids.isNotEmpty()) {
-                                                    val recetaId = respuesta.ids.first()
-                                                    withContext(Dispatchers.Main) {
-                                                        navController.navigate("detalle_receta/$recetaId")
-                                                    }
-                                                } else {
-                                                    withContext(Dispatchers.Main) {
-                                                        showDialogMessage("No se encontraron recetas para $ingrediente")
-                                                    }
-                                                }
-                                            } catch (e: Exception) {
-                                                withContext(Dispatchers.Main) {
-                                                    showDialogMessage("Error buscando receta: ${e.message}")
-                                                }
+                                        viewModel.buscarRecetas(ingrediente) // Esto ya busca recetas y actualiza el StateFlow
+
+                                        scope.launch {
+                                            val recetasDetectadas = viewModel.recetas.first() // Espera el primer valor emitido
+                                            val primera = recetasDetectadas.firstOrNull()
+
+                                            if (primera != null) {
+                                                recetaDetectada = primera
+                                                mostrarDialogo = true
+                                            } else {
+                                                dialogMessage = "No se encontraron recetas con $ingrediente"
+                                                mostrarDialogoSimple = true
                                             }
                                         }
                                     } else {
-                                        showDialogMessage("No se detectó ningún ingrediente.")
+                                        dialogMessage = "No se detectó ningún ingrediente."
+                                        mostrarDialogoSimple = true
                                     }
                                 },
                                 onError = { errorMsg ->
-                                    showDialogMessage("Error al detectar: $errorMsg")
+                                    dialogMessage = "Error al detectar: $errorMsg"
+                                    mostrarDialogoSimple = true
                                 }
                             )
                         },
                         onBack = { navController.popBackStack() }
                     )
                 }
+                composable("perfil") {
+                    PerfilScreen(
+                        userId = userId,
+                        viewModel = viewModel,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
             }
 
             }

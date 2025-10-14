@@ -1,5 +1,4 @@
 package com.example.pruebafastapiconbuscadorylikes.ui.screens
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
@@ -21,112 +20,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.pruebafastapiconbuscadorylikes.model.Receta
-/*
-@Composable
-fun DetalleRecetaScreen(
-    receta: Receta,
-    onBack: () -> Unit,
-    onLike: () -> Unit
-) {
-    Scaffold(
-        topBar = {
-            SmallTopAppBar(
-                title = { Text(receta.titulo) }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .padding(16.dp)
-                .fillMaxSize()
-        ) {
-            // Mostrar datos completos de la receta
-            if (receta.imagen_final_url?.isNotEmpty() == true) {
-                Image(
-                    painter = rememberAsyncImagePainter(receta.imagen_final_url),
-                    contentDescription = receta.titulo,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .clip(MaterialTheme.shapes.medium)
-                        .background(Color.LightGray),
-                    contentScale = ContentScale.Crop
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-            }
 
-            Text("Descripción:")
-            Text(receta.descripcion, style = MaterialTheme.typography.bodyMedium)
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text("Calorías: ${receta.calorias}")
-            Text("Tiempo de preparación: ${receta.tiempoPreparacion}")
-            Text("Porciones: ${receta.porciones}")
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text("Ingrediente principal: ${receta.ingrediente_principal}")
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text("Ingredientes:")
-            LazyColumn {
-                items(receta.ingredientes) { ing ->
-                    val texto = buildString {
-                        append(ing.nombre ?: "")
-                        if (!ing.cantidad.isNullOrBlank()) append(" - ${ing.cantidad}")
-                        if (!ing.unidad.isNullOrBlank() && ing.unidad != "-") append(" ${ing.unidad}")
-                    }
-                    Text(texto)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text("Pasos:")
-            LazyColumn {
-                items(receta.pasos.sortedBy { it.orden }) { paso ->
-                    Text("${paso.orden}. ${paso.descripcion}")
-                    if (!paso.imagen_url.isNullOrEmpty()) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Image(
-                            painter = rememberAsyncImagePainter(paso.imagen_url),
-                            contentDescription = paso.descripcion,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(180.dp)
-                                .clip(MaterialTheme.shapes.small)
-                                .background(Color.LightGray),
-                            contentScale = ContentScale.Crop
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = onLike,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (receta.liked_by.isNotEmpty()) "💔 Quitar Like" else "❤️ Like")
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Button(
-                onClick = onBack,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("⬅️ Volver")
-            }
-        }
-    }
-}
-*/
 @Composable
 fun DetalleRecetaScreen(
     receta: Receta,

@@ -14,7 +14,6 @@ import org.json.JSONObject
 import java.io.File
 import java.io.IOException
 class RoboflowService(private val context: Context) {
-
     private val modelEndpoint = "https://detect.roboflow.com/cookcamfood-jrrdw/25?api_key=wSRpQlKEKD5zEEiN0ywM"
     private val client = OkHttpClient()
 

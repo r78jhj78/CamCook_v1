@@ -8,14 +8,19 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,6 +36,9 @@ import java.io.File
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import com.example.pruebafastapiconbuscadorylikes.model.Receta
+import coil.compose.AsyncImage
 
 @Composable
 fun CameraScreen(
@@ -114,5 +122,51 @@ fun CameraScreen(
                 Icon(Icons.Default.CameraAlt, contentDescription = "Tomar foto")
             }
         }
+    }
+}
+@Composable
+fun PreviewRecetaDialog(
+    show: Boolean,
+    receta: Receta?,
+    onDismiss: () -> Unit,
+    onVerReceta: () -> Unit
+) {
+    if (show && receta != null) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            confirmButton = {
+                Button(onClick = {
+                    onDismiss()
+                    onVerReceta()
+                }) {
+                    Text("Ver receta completa")
+                }
+            },
+            title = {
+                Text(text = receta.titulo, style = MaterialTheme.typography.titleLarge)
+            },
+            text = {
+                Column {
+                    if (receta.imagen_final_url.isNotBlank()) {
+                        AsyncImage(
+                            model = receta.imagen_final_url,
+                            contentDescription = "Imagen de la receta",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text("Ingredientes principales:")
+                    receta.ingredientes
+                        .take(3)
+                        .forEach { ingrediente ->
+                            Text("- ${ingrediente.nombre ?: "Ingrediente desconocido"}")
+                        }
+                }
+            }
+        )
     }
 }

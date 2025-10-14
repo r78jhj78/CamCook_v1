@@ -1,7 +1,6 @@
 package com.example.pruebafastapiconbuscadorylikes.data.network
 import com.example.pruebafastapiconbuscadorylikes.model.ApiResponse
 import retrofit2.http.*
-
 data class LikeRequest(val uid: String)
 data class ViewRequest(val uid: String)
 data class LikeResponse(val message: String)
