@@ -42,6 +42,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButtonDefaults.Icon
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.RestaurantMenu
@@ -184,18 +186,33 @@ fun RecetasScreen(
                     CircularProgressIndicator()
                 }
             } else {
-                LazyColumn(state = listState) {
+                /*LazyColumn(state = listState) {
                     items(recetas) { receta ->
                         RecetaCard(
                             receta = receta,
+                            userId = userId,
                             onLike = { viewModel.darLike(receta.id, userId) },
                             onClick = {
-                                viewModel.sumarVistaReceta(receta.id)
+                                viewModel.registrarVista(receta.id, userId)
                                 onRecetaClick(receta)
                             }
                         )
                     }
+                }*/
+                LazyColumn(state = listState) {
+                    items(recetas) { receta ->
+                        RecetaCard(
+                            receta = receta,
+                            userId = userId,
+                            onLike = { viewModel.darLike(receta.id, userId) },
+                            onClick = {
+                                viewModel.registrarVista(receta.id, userId) // suma vista
+                                onRecetaClick(receta) // navega a detalle
+                            }
+                        )
+                    }
                 }
+
             }
         }
     }
@@ -321,23 +338,27 @@ fun SmallTopAppBar(title: @Composable () -> Unit) {
 @Composable
 fun RecetaCard(
     receta: Receta,
+    userId: String,
     onLike: () -> Unit,
     onClick: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val dioLike = receta.liked_by.isNotEmpty()
-
-    Card(
+    val dioLike = receta.liked_by.contains(userId)
+    val ingredientesEstado = remember {
+        mutableStateListOf<Boolean>().apply {
+            repeat(receta.ingredientes.size) { add(false) }
+        }
+    }
+    /*Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp)
-            // Cambiado: aquí el click abre el detalle
-            .clickable { onClick() }
+            .clickable { expanded = !expanded }
             .animateContentSize(animationSpec = spring()),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            // Encabezado
+        Column(Modifier.padding(12.dp)) {
+            // Título y expandible
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     receta.titulo,
@@ -354,26 +375,66 @@ fun RecetaCard(
             }
 
             if (expanded && receta.descripcion.isNotBlank()) {
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(Modifier.height(4.dp))
                 Text(receta.descripcion, style = MaterialTheme.typography.bodyMedium)
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
 
             // Likes y vistas
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("❤️ ${receta.likes} likes  👁️ ${receta.popup_clicks} vistas")
-                TextButton(onClick = onLike) {
-                    Text(if (dioLike) "💔 Quitar Like" else "❤️ Like")
+
+                if (!dioLike) {
+                    TextButton(onClick = onLike) {
+                        Text("❤️ Like")
+                    }
                 }
             }
         }
+    }*/
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            .clickable { onClick() }, // clic abre detalle
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+    ) {
+        Column(Modifier.padding(12.dp)) {
+            Text(
+                receta.titulo,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            Text("❤️ ${receta.likes} likes  👁️ ${receta.popup_clicks} vistas")
+
+            // Opcional: puedes mostrar un resumen de descripción
+            if (receta.descripcion.length > 50) {
+                Text(receta.descripcion.take(50) + "...", style = MaterialTheme.typography.bodySmall)
+            } else {
+                Text(receta.descripcion, style = MaterialTheme.typography.bodySmall)
+            }
+
+            // Botón de like
+            IconButton(onClick = onLike, modifier = Modifier.align(Alignment.End)) {
+                Icon(
+                    imageVector = if (dioLike) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                    contentDescription = "Like",
+                    tint = if (dioLike) Color.Red else Color.Gray
+                )
+            }
+        }
     }
+
 }
+
 @Composable
 fun InfoChip(text: String) {
     Surface(

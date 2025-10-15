@@ -1,30 +1,10 @@
 package com.example.pruebafastapiconbuscadorylikes.ui.screens
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,8 +20,19 @@ fun PerfilScreen(
     onBack: () -> Unit
 ) {
     val userData by viewModel.getUserData(userId).collectAsState(initial = null)
+
+    // 🔹 Flujos reactivos
+    val vistasPorReceta by viewModel.vistasPorReceta.collectAsState()
+    val titulosRecetasVistas by viewModel.titulosVistas.collectAsState()
+    val interacciones by viewModel.interacciones.collectAsState() // 👈 nuevo
+
     var isLoading by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        viewModel.escucharVistasConTitulos(userId)
+        viewModel.cargarInteracciones(userId) // 👈 nuevo
+    }
 
     Scaffold(
         topBar = {
@@ -69,16 +60,46 @@ fun PerfilScreen(
                     Text("Roles actuales: ${user.roles.joinToString(", ")}")
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Text("Likes: ${user.likes.size}")
-                    Text("Vistas: ${user.vistas.size}")
 
                     Spacer(modifier = Modifier.height(24.dp))
                     Divider()
-                    Spacer(modifier = Modifier.height(16.dp))
+/*
+                    if (user.vistas.isNotEmpty()) {
+                        Text("🍽 Recetas vistas (Firestore):")
+                        Spacer(modifier = Modifier.height(8.dp))
 
+                        user.vistas.forEach { (recetaId, cantidad) ->
+                            val titulo = titulosRecetasVistas[recetaId] ?: "Receta $recetaId"
+                            Text("• $titulo ($cantidad vista${if (cantidad != 1) "s" else ""})")
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }*/
+
+
+                    interacciones?.let { data ->
+                        if (data.vistas.isNotEmpty()) {
+                            Text("👀 Recetas vistas:")
+                            data.vistas.forEach { receta ->
+                                Text("• ${receta.titulo}")
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+
+                        if (data.likes.isNotEmpty()) {
+                            Text("❤️ Recetas con like:")
+                            data.likes.forEach { receta ->
+                                Text("• ${receta.titulo} ")
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+                        Divider()
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text("Agregar o quitar roles:")
 
-                    // Botón para Chef
+                    // 🔸 Botón para Chef
                     RoleToggleButton(
                         role = "chef",
                         hasRole = user.roles.contains("chef"),
@@ -98,7 +119,7 @@ fun PerfilScreen(
                         }
                     )
 
-                    // Botón para Proveedor
+                    // 🔸 Botón para Proveedor
                     RoleToggleButton(
                         role = "proveedor",
                         hasRole = user.roles.contains("proveedor"),

@@ -5,5 +5,6 @@ data class Usuario(
     val email: String = "",
     val roles: List<String> = listOf("usuario"),
     val likes: List<String> = emptyList(),
-    val vistas: List<String> = emptyList()
+    val vistas: Map<String, Int> = emptyMap()
 )
+

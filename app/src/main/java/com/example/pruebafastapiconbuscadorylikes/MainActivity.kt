@@ -151,6 +151,7 @@ class MainActivity : ComponentActivity() {
                     if (receta != null) {
                         DetalleRecetaScreen(
                             receta = receta,
+                            userId = userId,
                             onBack = { navController.popBackStack() },
                             onLike = { viewModel.darLike(receta.id, userId) }
                         )

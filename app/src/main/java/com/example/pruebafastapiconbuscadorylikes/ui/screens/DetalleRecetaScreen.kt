@@ -131,15 +131,15 @@ fun DetalleRecetaScreen(
 fun DetalleRecetaScreen(
     receta: Receta,
     onBack: () -> Unit,
-    onLike: () -> Unit
+    onLike: () -> Unit,
+    userId: String,
 ) {
-    // Para marcar ingredientes
     val ingredientesEstado = remember {
         mutableStateListOf<Boolean>().apply {
             repeat(receta.ingredientes.size) { add(false) }
         }
     }
-
+    val dioLike = receta.liked_by.contains(userId)
     Scaffold(
         topBar = {
             SmallTopAppBar(
@@ -147,7 +147,6 @@ fun DetalleRecetaScreen(
             )
         }
     ) { padding ->
-        // TODO: Aquí usamos Column dentro de Scroll para que todo sea scrolleable
         Column(
             modifier = Modifier
                 .padding(padding)
@@ -241,12 +240,20 @@ fun DetalleRecetaScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            // Botón de like
-            Button(
-                onClick = onLike,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (receta.liked_by.isNotEmpty()) "💔 Quitar Like" else "❤️ Like")
+            if (!dioLike) {
+                Button(
+                    onClick = onLike,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("❤️ Like")
+                }
+            } else {
+                Button(
+                    onClick = onLike, // aquí sería tu función para quitar like
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("💔 Quitar Like")
+                }
             }
 
             Spacer(Modifier.height(12.dp))
