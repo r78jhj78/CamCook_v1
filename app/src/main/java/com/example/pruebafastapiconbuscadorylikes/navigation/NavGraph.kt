@@ -19,6 +19,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 
 object Routes {
+    const val SPLASH = "splash"
     const val LOGIN = "login"
     const val REGISTER = "register"
     const val RECETAS = "recetas"

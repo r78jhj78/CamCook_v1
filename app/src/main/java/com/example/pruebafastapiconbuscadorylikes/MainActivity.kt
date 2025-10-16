@@ -63,6 +63,7 @@ import androidx.camera.view.PreviewView
 import com.example.pruebafastapiconbuscadorylikes.model.Receta
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.PerfilScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.PreviewRecetaDialog
+import com.example.pruebafastapiconbuscadorylikes.ui.screens.SplashScreen
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import java.io.File
@@ -83,8 +84,14 @@ class MainActivity : ComponentActivity() {
 
             NavHost(
                 navController = navController,
-                startDestination = Routes.LOGIN
-            ) {
+                startDestination = Routes.SPLASH
+            )
+            {
+                // 🟢 Splash Screen
+                composable(Routes.SPLASH) {
+                    SplashScreen(navController = navController)
+                }
+
                 composable(Routes.LOGIN) {
                     LoginScreen(
                         onLoginSuccess = { uid ->
