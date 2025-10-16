@@ -9,7 +9,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-
 @Composable
 fun PermissionRequester(
     permission: String = Manifest.permission.CAMERA,

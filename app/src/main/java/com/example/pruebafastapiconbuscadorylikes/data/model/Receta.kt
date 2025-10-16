@@ -1,5 +1,4 @@
 package com.example.pruebafastapiconbuscadorylikes.model
-
 /*
 data class Receta(
     val id: String = "",
