@@ -38,7 +38,7 @@ class RecetasViewModel : ViewModel() {
 
     private val _titulosVistas = MutableStateFlow<Map<String, String>>(emptyMap())
     val titulosVistas: StateFlow<Map<String, String>> = _titulosVistas
-
+    private var bloqueandoSnapshot = false
 
     private val _recetas = MutableStateFlow<List<Receta>>(emptyList())
     val recetas = _recetas.asStateFlow()
@@ -50,24 +50,19 @@ class RecetasViewModel : ViewModel() {
 
 
     init {
-        // Escuchar cambios en todas las recetas al iniciar el ViewModel
         escucharTodasRecetas()
     }
 
-    /** 🔹 Buscar recetas usando tu API */
     fun buscarRecetas(query: String) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // 🔸 1. Buscar en OpenSearch -> obtener IDs
                 val response = RetrofitClient.api.buscarRecetas(query)
                 val ids = response.ids
 
-                // 🔸 2. Limpiar escuchas anteriores si quieres
                 listeners.forEach { it.remove() }
                 listeners.clear()
 
-                // 🔸 3. Obtener recetas desde Firestore usando los IDs
                 val db = FirebaseFirestore.getInstance()
                 val recetasRef = db.collection("recetas")
 
@@ -90,8 +85,7 @@ class RecetasViewModel : ViewModel() {
         }
     }
 
-    /** 🔹 Dar like a una receta */
-    fun darLike(recetaId: String, uid: String) {
+    /*fun darLike(recetaId: String, uid: String) {
         viewModelScope.launch {
             try {
                 // Actualiza localmente primero
@@ -114,6 +108,64 @@ class RecetasViewModel : ViewModel() {
                 e.printStackTrace()
             }
         }
+    }*/
+
+
+    /*fun darLike(recetaId: String, uid: String) {
+        viewModelScope.launch {
+            try {
+                bloqueandoSnapshot = true // 🔹 Bloquea la reacción al snapshot temporalmente
+
+                _recetas.value = _recetas.value.map { receta ->
+                    if (receta.id == recetaId) {
+                        val yaDioLike = receta.liked_by.containsKey(uid)
+                        val nuevosLikes = if (yaDioLike) receta.likes - 1 else receta.likes + 1
+                        val nuevoMapa = receta.liked_by.toMutableMap().apply {
+                            if (yaDioLike) remove(uid) else put(uid, true)
+                        }
+                        receta.copy(likes = nuevosLikes, liked_by = nuevoMapa)
+                    } else receta
+                }
+
+                RetrofitClient.api.darLike(recetaId, LikeRequest(uid))
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                bloqueandoSnapshot = false
+            }
+        }
+    }*/
+    fun darLike(recetaId: String, uid: String) {
+        viewModelScope.launch {
+            try {
+                bloqueandoSnapshot = true
+
+                _recetas.value = _recetas.value.map { receta ->
+                    if (receta.id == recetaId) {
+                        val yaDioLike = receta.liked_by.containsKey(uid)
+                        val nuevosLikes = if (yaDioLike) receta.likes - 1 else receta.likes + 1
+                        val nuevoMapa = receta.liked_by.toMutableMap().apply {
+                            if (yaDioLike) remove(uid) else put(uid, true)
+                        }
+                        receta.copy(likes = nuevosLikes, liked_by = nuevoMapa)
+                    } else receta
+                }
+
+                val receta = _recetas.value.find { it.id == recetaId }
+                val yaDioLike = receta?.liked_by?.containsKey(uid) == true
+
+                if (yaDioLike) {
+                    RetrofitClient.api.darLike(recetaId, LikeRequest(uid))
+                } else {
+                    RetrofitClient.api.quitarLike(recetaId, LikeRequest(uid))
+                }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                bloqueandoSnapshot = false
+            }
+        }
     }
 
 
@@ -123,7 +175,6 @@ class RecetasViewModel : ViewModel() {
                 RetrofitClient.api.agregarVista(recetaId, ViewRequest(uid))
                 Log.d("FastAPI", "✅ Vista registrada en backend para $recetaId")
 
-                // Actualización local opcional:
                 val current = _vistasPorReceta.value.toMutableMap()
                 current[recetaId] = (current[recetaId] ?: 0) + 1
                 _vistasPorReceta.value = current
@@ -134,28 +185,23 @@ class RecetasViewModel : ViewModel() {
         }
     }
 
-
-
-
-
-
-    /** 🔹 Escuchar toda la colección de recetas en tiempo real */
     fun escucharTodasRecetas() {
         val recetasRef = FirebaseFirestore.getInstance().collection("recetas")
         val listener = recetasRef.addSnapshotListener { snapshot, _ ->
-            if (snapshot != null) {
+            if (snapshot != null && !bloqueandoSnapshot) {
                 val recetasActualizadas = snapshot.documents.mapNotNull { doc ->
                     doc.toObject(Receta::class.java)?.copy(id = doc.id)
                 }
-                _recetas.value = recetasActualizadas // ✅ actualiza el flujo
+                _recetas.value = recetasActualizadas
             }
         }
         listeners.add(listener)
     }
 
+
     override fun onCleared() {
         super.onCleared()
-        // Cancelar todos los listeners al destruir el ViewModel
+
         listeners.forEach { it.remove() }
     }
 /*
@@ -208,7 +254,7 @@ class RecetasViewModel : ViewModel() {
     }
 
     fun quitarRol(userId: String, rol: String, onComplete: () -> Unit) {
-        if (rol == "usuario") return // No permitir eliminar "usuario"
+        if (rol == "usuario") return
 
         val db = Firebase.firestore
         val docRef = db.collection("usuarios").document(userId)
@@ -251,27 +297,6 @@ class RecetasViewModel : ViewModel() {
             }
     }
 
-    /*fun registrarVistaDeUsuario(uid: String, recetaId: String) {
-        val userRef = firestore.collection("usuarios").document(uid)
-        val vistaRef = userRef.collection("vistas").document(recetaId)
-
-        firestore.runTransaction { transaction ->
-            val doc = transaction.get(vistaRef)
-            val nuevoConteo = if (doc.exists()) {
-                val actual = doc.getLong("contador") ?: 0
-                actual + 1
-            } else 1
-
-            // ✅ Actualiza subcolección
-            transaction.set(vistaRef, mapOf("contador" to nuevoConteo))
-
-            // ✅ Actualiza campo vistas del documento principal
-            transaction.update(userRef, "vistas.$recetaId", nuevoConteo)
-        }.addOnFailureListener {
-            it.printStackTrace()
-        }
-    }*/
-
     fun escucharVistasConTitulos(uid: String) {
         val vistasRef = firestore.collection("usuarios").document(uid).collection("vistas")
         vistasRef.addSnapshotListener { snapshot, _ ->
@@ -285,7 +310,6 @@ class RecetasViewModel : ViewModel() {
 
                 _vistasPorReceta.value = vistasMap
 
-                // Obtener títulos de las recetas
                 val titulosMap = mutableMapOf<String, String>()
                 vistasMap.keys.forEach { recetaId ->
                     obtenerRecetaPorId(recetaId) { titulo ->

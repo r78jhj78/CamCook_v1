@@ -249,7 +249,7 @@ fun DetalleRecetaScreen(
                 }
             } else {
                 Button(
-                    onClick = onLike, // aquí sería tu función para quitar like
+                    onClick = onLike,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("💔 Quitar Like")
@@ -258,7 +258,6 @@ fun DetalleRecetaScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // Botón para volver
             Button(
                 onClick = onBack,
                 modifier = Modifier.fillMaxWidth()
@@ -266,7 +265,7 @@ fun DetalleRecetaScreen(
                 Text("⬅️ Volver")
             }
 
-            Spacer(Modifier.height(16.dp)) // margen final
+            Spacer(Modifier.height(16.dp))
         }
     }
 }

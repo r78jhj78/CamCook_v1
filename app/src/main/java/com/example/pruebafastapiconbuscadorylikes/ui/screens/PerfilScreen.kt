@@ -21,17 +21,16 @@ fun PerfilScreen(
 ) {
     val userData by viewModel.getUserData(userId).collectAsState(initial = null)
 
-    // 🔹 Flujos reactivos
     val vistasPorReceta by viewModel.vistasPorReceta.collectAsState()
     val titulosRecetasVistas by viewModel.titulosVistas.collectAsState()
-    val interacciones by viewModel.interacciones.collectAsState() // 👈 nuevo
+    val interacciones by viewModel.interacciones.collectAsState()
 
     var isLoading by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.escucharVistasConTitulos(userId)
-        viewModel.cargarInteracciones(userId) // 👈 nuevo
+        viewModel.cargarInteracciones(userId)
     }
 
     Scaffold(
@@ -99,7 +98,7 @@ fun PerfilScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("Agregar o quitar roles:")
 
-                    // 🔸 Botón para Chef
+
                     RoleToggleButton(
                         role = "chef",
                         hasRole = user.roles.contains("chef"),
@@ -119,7 +118,7 @@ fun PerfilScreen(
                         }
                     )
 
-                    // 🔸 Botón para Proveedor
+
                     RoleToggleButton(
                         role = "proveedor",
                         hasRole = user.roles.contains("proveedor"),

@@ -68,7 +68,7 @@ fun RecetasScreen(
     onGoToProfile: () -> Unit,
     onGoToFavorites: () -> Unit,
     onGoToSettings: () -> Unit,
-    onGoBackToInicio: () -> Unit // Este se usará para volver al inicio
+    onGoBackToInicio: () -> Unit
 ) {
     val recetas by viewModel.recetas.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -89,7 +89,6 @@ fun RecetasScreen(
                 title = { Text("🔍 Buscar Receta") },
                 navigationIcon = {
                     IconButton(onClick = {
-                        // Limpiar búsqueda y volver a recetas completas
                         query = ""
                         viewModel.escucharTodasRecetas()
                         onGoBackToInicio()
@@ -204,10 +203,12 @@ fun RecetasScreen(
                         RecetaCard(
                             receta = receta,
                             userId = userId,
-                            onLike = { viewModel.darLike(receta.id, userId) },
+                            onLike = {
+                                viewModel.darLike(receta.id, userId)
+                            },
                             onClick = {
-                                viewModel.registrarVista(receta.id, userId) // suma vista
-                                onRecetaClick(receta) // navega a detalle
+                                viewModel.registrarVista(receta.id, userId)
+                                onRecetaClick(receta)
                             }
                         )
                     }
@@ -401,7 +402,7 @@ fun RecetaCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp)
-            .clickable { onClick() }, // clic abre detalle
+            .clickable { onClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Column(Modifier.padding(12.dp)) {
@@ -415,14 +416,12 @@ fun RecetaCard(
 
             Text("❤️ ${receta.likes} likes  👁️ ${receta.popup_clicks} vistas")
 
-            // Opcional: puedes mostrar un resumen de descripción
             if (receta.descripcion.length > 50) {
                 Text(receta.descripcion.take(50) + "...", style = MaterialTheme.typography.bodySmall)
             } else {
                 Text(receta.descripcion, style = MaterialTheme.typography.bodySmall)
             }
 
-            // Botón de like
             IconButton(onClick = onLike, modifier = Modifier.align(Alignment.End)) {
                 Icon(
                     imageVector = if (dioLike) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
