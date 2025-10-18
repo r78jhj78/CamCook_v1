@@ -1,59 +1,51 @@
 package com.example.pruebafastapiconbuscadorylikes.ui.screens
 
+import android.graphics.BitmapFactory
+import android.util.Log
+import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import java.io.File
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.pruebafastapiconbuscadorylikes.data.network.ClarifaiService
+import com.example.pruebafastapiconbuscadorylikes.data.network.RetrofitClient
 import com.example.pruebafastapiconbuscadorylikes.model.Receta
-import coil.compose.AsyncImage
-
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.io.File
 
 @Composable
 fun CameraScreen(
-    onImageCaptured: (File) -> Unit,
+    onRecetasEncontradas: (List<String>) -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
-
     val outputDirectory = remember { context.cacheDir }
     val executor = ContextCompat.getMainExecutor(context)
     val previewView = remember { PreviewView(context) }
     var imageCapture: ImageCapture? by remember { mutableStateOf(null) }
+
+    var cargando by remember { mutableStateOf(false) }
+    var alimentoDetectado by remember { mutableStateOf<String?>(null) }
+    val clarifaiService = remember { ClarifaiService() }
 
     AndroidView(factory = {
         previewView.apply {
@@ -68,17 +60,11 @@ fun CameraScreen(
         }
 
         imageCapture = ImageCapture.Builder().build()
-
         val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
         try {
             cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                cameraSelector,
-                preview,
-                imageCapture
-            )
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, imageCapture)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -88,6 +74,10 @@ fun CameraScreen(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.BottomCenter
     ) {
+        if (cargando) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        }
+
         Row(
             Modifier
                 .padding(24.dp)
@@ -112,10 +102,33 @@ fun CameraScreen(
                     object : ImageCapture.OnImageSavedCallback {
                         override fun onError(exc: ImageCaptureException) {
                             exc.printStackTrace()
+                            Toast.makeText(context, "Error al guardar foto", Toast.LENGTH_SHORT).show()
                         }
 
                         override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                            onImageCaptured(photoFile)
+                            cargando = true
+
+                            val bitmap = BitmapFactory.decodeFile(photoFile.absolutePath)
+
+                            clarifaiService.detectarAlimento(bitmap) { alimento ->
+                                cargando = false
+                                if (alimento != null) {
+                                    alimentoDetectado = alimento
+                                    Toast.makeText(context, "🍎 Detectado: $alimento", Toast.LENGTH_LONG).show()
+
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        try {
+                                            val response = RetrofitClient.api.buscarRecetas(alimento)
+                                            Log.d("Clarifai", "Recetas encontradas: ${response.ids}")
+                                            onRecetasEncontradas(response.ids)
+                                        } catch (e: Exception) {
+                                            Log.e("Clarifai", "Error al buscar recetas: ${e.message}")
+                                        }
+                                    }
+                                } else {
+                                    Toast.makeText(context, "No se detectó alimento", Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         }
                     }
                 )
@@ -124,50 +137,15 @@ fun CameraScreen(
             }
         }
     }
-}
-@Composable
-fun PreviewRecetaDialog(
-    show: Boolean,
-    receta: Receta?,
-    onDismiss: () -> Unit,
-    onVerReceta: () -> Unit
-) {
-    if (show && receta != null) {
+
+    alimentoDetectado?.let {
         AlertDialog(
-            onDismissRequest = onDismiss,
+            onDismissRequest = { alimentoDetectado = null },
             confirmButton = {
-                Button(onClick = {
-                    onDismiss()
-                    onVerReceta()
-                }) {
-                    Text("Ver receta completa")
-                }
+                TextButton(onClick = { alimentoDetectado = null }) { Text("Aceptar") }
             },
-            title = {
-                Text(text = receta.titulo, style = MaterialTheme.typography.titleLarge)
-            },
-            text = {
-                Column {
-                    if (receta.imagen_final_url.isNotBlank()) {
-                        AsyncImage(
-                            model = receta.imagen_final_url,
-                            contentDescription = "Imagen de la receta",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(180.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text("Ingredientes principales:")
-                    receta.ingredientes
-                        .take(3)
-                        .forEach { ingrediente ->
-                            Text("- ${ingrediente.nombre ?: "Ingrediente desconocido"}")
-                        }
-                }
-            }
+            title = { Text("🍽️ Alimento detectado") },
+            text = { Text(it) }
         )
     }
 }

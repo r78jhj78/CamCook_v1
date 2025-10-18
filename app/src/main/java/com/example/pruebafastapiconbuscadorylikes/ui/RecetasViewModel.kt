@@ -84,57 +84,6 @@ class RecetasViewModel : ViewModel() {
             }
         }
     }
-
-    /*fun darLike(recetaId: String, uid: String) {
-        viewModelScope.launch {
-            try {
-                // Actualiza localmente primero
-                _recetas.value = _recetas.value.map { receta ->
-                    if (receta.id == recetaId) {
-                        val yaDioLike = receta.liked_by.containsKey(uid)
-                        val nuevosLikes = if (yaDioLike) receta.likes - 1 else receta.likes + 1
-                        val nuevoMapa = receta.liked_by.toMutableMap().apply {
-                            if (yaDioLike) remove(uid) else put(uid, true)
-                        }
-                        receta.copy(likes = nuevosLikes, liked_by = nuevoMapa)
-                    } else receta
-                }
-
-                // Luego envía al servidor
-                val response = RetrofitClient.api.darLike(recetaId, LikeRequest(uid))
-                println(response.message)
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }*/
-
-
-    /*fun darLike(recetaId: String, uid: String) {
-        viewModelScope.launch {
-            try {
-                bloqueandoSnapshot = true // 🔹 Bloquea la reacción al snapshot temporalmente
-
-                _recetas.value = _recetas.value.map { receta ->
-                    if (receta.id == recetaId) {
-                        val yaDioLike = receta.liked_by.containsKey(uid)
-                        val nuevosLikes = if (yaDioLike) receta.likes - 1 else receta.likes + 1
-                        val nuevoMapa = receta.liked_by.toMutableMap().apply {
-                            if (yaDioLike) remove(uid) else put(uid, true)
-                        }
-                        receta.copy(likes = nuevosLikes, liked_by = nuevoMapa)
-                    } else receta
-                }
-
-                RetrofitClient.api.darLike(recetaId, LikeRequest(uid))
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                bloqueandoSnapshot = false
-            }
-        }
-    }*/
     fun darLike(recetaId: String, uid: String) {
         viewModelScope.launch {
             try {
@@ -204,23 +153,6 @@ class RecetasViewModel : ViewModel() {
 
         listeners.forEach { it.remove() }
     }
-/*
-    fun sumarVistaReceta(recetaId: String) {
-        viewModelScope.launch {
-            val recetaRef = firestore.collection("recetas").document(recetaId)
-
-            firestore.runTransaction { transaction ->
-                val snapshot = transaction.get(recetaRef)
-                val vistasActuales = snapshot.getLong("popup_clicks") ?: 0
-                transaction.update(recetaRef, "popup_clicks", vistasActuales + 1)
-            }.addOnSuccessListener {
-                println("✅ Vista incrementada correctamente.")
-            }.addOnFailureListener {
-                it.printStackTrace()
-            }
-        }
-    }
-*/
     fun getUserData(userId: String): Flow<Usuario> = callbackFlow {
         val listener = firestore.collection("usuarios").document(userId)
             .addSnapshotListener { snapshot, error ->
@@ -262,30 +194,6 @@ class RecetasViewModel : ViewModel() {
         docRef.update("roles", FieldValue.arrayRemove(rol))
             .addOnSuccessListener { onComplete() }
             .addOnFailureListener { Log.e("Firebase", "Error quitando rol", it) }
-    }
-
-
-    fun cambiarRol(userId: String, nuevoRol: String, onComplete: () -> Unit) {
-        val db = Firebase.firestore
-        db.collection("usuarios").document(userId)
-            .update("rol", nuevoRol)
-            .addOnSuccessListener { onComplete() }
-            .addOnFailureListener { Log.e("Firebase", "Error actualizando rol", it) }
-    }
-
-    fun obtenerVistasDeUsuario(uid: String, onResult: (Map<String, Int>) -> Unit) {
-        val db = FirebaseFirestore.getInstance()
-        db.collection("usuarios").document(uid).collection("vistas")
-            .get()
-            .addOnSuccessListener { snapshot ->
-                val conteo = mutableMapOf<String, Int>()
-                for (doc in snapshot.documents) {
-                    val recetaId = doc.id
-                    val contador = doc.getLong("contador")?.toInt() ?: 1
-                    conteo[recetaId] = contador
-                }
-                onResult(conteo)
-            }
     }
 
     fun obtenerRecetaPorId(recetaId: String, onSuccess: (String) -> Unit) {

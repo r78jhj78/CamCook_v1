@@ -45,5 +45,9 @@ interface ApiService {
         @Path("uid")
         uid: String
     ): InteraccionesResponse
+    @GET("recetas/{receta_id}")
+    suspend fun obtenerRecetaPorId(
+        @Path("receta_id") recetaId: String
+    ): Receta
 
 }

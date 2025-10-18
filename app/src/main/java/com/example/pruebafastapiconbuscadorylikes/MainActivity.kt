@@ -25,7 +25,6 @@ import androidx.navigation.navArgument
 import com.example.pruebafastapiconbuscadorylikes.auth.LoginScreen
 import com.example.pruebafastapiconbuscadorylikes.auth.RegisterScreen
 import com.example.pruebafastapiconbuscadorylikes.data.network.RetrofitClient
-import com.example.pruebafastapiconbuscadorylikes.data.network.RoboflowService
 import com.example.pruebafastapiconbuscadorylikes.navigation.Routes
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.CameraScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.DetalleRecetaScreen
@@ -60,9 +59,9 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.camera.view.PreviewView
+import com.example.pruebafastapiconbuscadorylikes.data.network.ClarifaiService
 import com.example.pruebafastapiconbuscadorylikes.model.Receta
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.PerfilScreen
-import com.example.pruebafastapiconbuscadorylikes.ui.screens.PreviewRecetaDialog
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import java.io.File
@@ -70,6 +69,7 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import com.example.pruebafastapiconbuscadorylikes.ui.screens.PreviewRecetaDialog
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -157,68 +157,91 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
+                composable(
+                    route = "detalle_receta_json/{recetaJson}",
+                    arguments = listOf(navArgument("recetaJson") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val recetaJson = backStackEntry.arguments?.getString("recetaJson")
+                    val receta = Gson().fromJson(Uri.decode(recetaJson), Receta::class.java)
+
+                    DetalleRecetaScreen(
+                        receta = receta,
+                        userId = userId,
+                        onBack = { navController.popBackStack() },
+                        onLike = { viewModel.darLike(receta.id, userId) }
+                    )
+                }
 
                 composable("camera") {
                     val context = LocalContext.current
-                    val roboflowService = remember { RoboflowService(context) }
                     val scope = rememberCoroutineScope()
+                    val clarifaiService = remember { ClarifaiService() }
+
+                    var mostrarDialogo by remember { mutableStateOf(false) }
+                    var recetaDetectada by remember { mutableStateOf<Receta?>(null) }
+                    var dialogMessage by remember { mutableStateOf("") }
                     var mostrarDialogoSimple by remember { mutableStateOf(false) }
 
-                    var showDialog by remember { mutableStateOf(false) }
-                    var dialogMessage by remember { mutableStateOf("") }
-
-                    fun showDialogMessage(message: String) {
-                        dialogMessage = message
-                        showDialog = true
-                    }
-
-                    if (showDialog) {
+                    // 🔹 Mostrar popup si hay receta
+                    if (mostrarDialogo && recetaDetectada != null) {
                         PreviewRecetaDialog(
                             show = mostrarDialogo,
                             receta = recetaDetectada,
                             onDismiss = { mostrarDialogo = false },
                             onVerReceta = {
                                 recetaDetectada?.let {
-                                    navController.navigate("detalle_receta/${it.id}")
+                                    val recetaJson = Uri.encode(Gson().toJson(it))
+                                    navController.navigate("detalle_receta_json/$recetaJson")
                                 }
                             }
                         )
                     }
 
+                    // 🔹 Cámara
                     CameraScreen(
                         onImageCaptured = { photoFile ->
                             val bitmap = BitmapFactory.decodeFile(photoFile.absolutePath)
 
-                            roboflowService.detectarIngredientes(
-                                bitmap = bitmap,
-                                onSuccess = { detections ->
-                                    if (detections.isNotEmpty()) {
-                                        val ingrediente = detections[0].label
+                            Toast.makeText(context, "Analizando imagen con Clarifai...", Toast.LENGTH_SHORT).show()
 
-                                        viewModel.buscarRecetas(ingrediente) // Esto ya busca recetas y actualiza el StateFlow
+                            clarifaiService.detectarAlimento(bitmap) { alimento ->
+                                if (alimento != null) {
+                                    Log.d("Clarifai", "🍎 Alimento detectado: $alimento")
+                                    Toast.makeText(context, "Detectado: $alimento", Toast.LENGTH_LONG).show()
 
-                                        scope.launch {
-                                            val recetasDetectadas = viewModel.recetas.first() // Espera el primer valor emitido
-                                            val primera = recetasDetectadas.firstOrNull()
+                                    scope.launch(Dispatchers.IO) {
+                                        try {
+                                            val response = RetrofitClient.api.buscarRecetas(alimento)
+                                            val ids = response.ids
 
-                                            if (primera != null) {
-                                                recetaDetectada = primera
-                                                mostrarDialogo = true
+                                            if (ids.isNotEmpty()) {
+                                                val primeraId = ids.first()
+                                                Log.d("Clarifai", "🧾 Buscando detalles de receta ID: $primeraId")
+
+                                                val receta = RetrofitClient.api.obtenerRecetaPorId(primeraId)
+
+                                                withContext(Dispatchers.Main) {
+                                                    recetaDetectada = receta
+                                                    mostrarDialogo = true
+                                                }
                                             } else {
-                                                dialogMessage = "No se encontraron recetas con $ingrediente"
+                                                withContext(Dispatchers.Main) {
+                                                    dialogMessage = "No se encontraron recetas con $alimento"
+                                                    mostrarDialogoSimple = true
+                                                }
+                                            }
+                                        } catch (e: Exception) {
+                                            Log.e("Clarifai", "Error buscando recetas: ${e.message}")
+                                            withContext(Dispatchers.Main) {
+                                                dialogMessage = "Error buscando recetas"
                                                 mostrarDialogoSimple = true
                                             }
                                         }
-                                    } else {
-                                        dialogMessage = "No se detectó ningún ingrediente."
-                                        mostrarDialogoSimple = true
                                     }
-                                },
-                                onError = { errorMsg ->
-                                    dialogMessage = "Error al detectar: $errorMsg"
-                                    mostrarDialogoSimple = true
+                                } else {
+                                    Toast.makeText(context, "No se detectó ningún alimento.", Toast.LENGTH_SHORT).show()
                                 }
-                            )
+                            }
                         },
                         onBack = { navController.popBackStack() }
                     )
