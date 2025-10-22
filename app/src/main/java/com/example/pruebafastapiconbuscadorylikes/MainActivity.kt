@@ -60,7 +60,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.camera.view.PreviewView
 import com.example.pruebafastapiconbuscadorylikes.data.network.ClarifaiService
+import com.example.pruebafastapiconbuscadorylikes.data.network.ViewRequest
 import com.example.pruebafastapiconbuscadorylikes.model.Receta
+import com.example.pruebafastapiconbuscadorylikes.ui.screens.FormularioProveedorScreen
+import com.example.pruebafastapiconbuscadorylikes.ui.screens.MarketplaceScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.PerfilScreen
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
@@ -70,6 +73,8 @@ import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.PreviewRecetaDialog
+import com.example.pruebafastapiconbuscadorylikes.ui.screens.ProductosProveedorScreen
+import com.example.pruebafastapiconbuscadorylikes.ui.screens.ValidacionAdminScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -157,19 +162,46 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
-                composable(
-                    route = "detalle_receta_json/{recetaJson}",
-                    arguments = listOf(navArgument("recetaJson") { type = NavType.StringType })
-                ) { backStackEntry ->
-                    val recetaJson = backStackEntry.arguments?.getString("recetaJson")
-                    val receta = Gson().fromJson(Uri.decode(recetaJson), Receta::class.java)
 
-                    DetalleRecetaScreen(
-                        receta = receta,
-                        userId = userId,
-                        onBack = { navController.popBackStack() },
-                        onLike = { viewModel.darLike(receta.id, userId) }
-                    )
+                // 🔹 Pantalla de detalle de receta (recibe solo el ID)
+                composable(
+                    route = "detalle_receta_json/{recetaId}",
+                    arguments = listOf(navArgument("recetaId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val recetaId = backStackEntry.arguments?.getString("recetaId") ?: return@composable
+                    var receta by remember { mutableStateOf<Receta?>(null) }
+                    val context = LocalContext.current
+                    val scope = rememberCoroutineScope()
+
+                    // ✅ Carga la receta desde la API y registra una vista
+                    LaunchedEffect(recetaId) {
+                        try {
+                            val recetaApi = RetrofitClient.api.obtenerRecetaPorId(recetaId)
+                            receta = recetaApi
+
+                            try {
+                                RetrofitClient.api.agregarVista(
+                                    recetaId,
+                                    ViewRequest(uid = userId.ifEmpty { "anonimo" })
+                                )
+                                Log.d("DetalleReceta", "✅ Vista registrada para $recetaId")
+                            } catch (ve: Exception) {
+                                Log.e("DetalleReceta", "⚠️ Error registrando vista: ${ve.message}")
+                            }
+
+                        } catch (e: Exception) {
+                            Log.e("DetalleReceta", "Error obteniendo receta: ${e.message}")
+                        }
+                    }
+
+                    receta?.let {
+                        DetalleRecetaScreen(
+                            receta = it,
+                            userId = userId,
+                            onBack = { navController.popBackStack() },
+                            onLike = { viewModel.darLike(it.id, userId) }
+                        )
+                    }
                 }
 
                 composable("camera") {
@@ -182,26 +214,24 @@ class MainActivity : ComponentActivity() {
                     var dialogMessage by remember { mutableStateOf("") }
                     var mostrarDialogoSimple by remember { mutableStateOf(false) }
 
-                    // 🔹 Mostrar popup si hay receta
                     if (mostrarDialogo && recetaDetectada != null) {
                         PreviewRecetaDialog(
                             show = mostrarDialogo,
                             receta = recetaDetectada,
                             onDismiss = { mostrarDialogo = false },
                             onVerReceta = {
-                                recetaDetectada?.let {
-                                    val recetaJson = Uri.encode(Gson().toJson(it))
-                                    navController.navigate("detalle_receta_json/$recetaJson")
+                                if (userId.isNotEmpty()) {
+                                    navController.navigate("detalle_receta_json/${recetaDetectada?.id}")
+                                } else {
+                                    Toast.makeText(context, "Debes iniciar sesión para ver detalles", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         )
                     }
 
-                    // 🔹 Cámara
                     CameraScreen(
                         onImageCaptured = { photoFile ->
                             val bitmap = BitmapFactory.decodeFile(photoFile.absolutePath)
-
                             Toast.makeText(context, "Analizando imagen con Clarifai...", Toast.LENGTH_SHORT).show()
 
                             clarifaiService.detectarAlimento(bitmap) { alimento ->
@@ -246,13 +276,53 @@ class MainActivity : ComponentActivity() {
                         onBack = { navController.popBackStack() }
                     )
                 }
+
+
                 composable("perfil") {
                     PerfilScreen(
                         userId = userId,
                         viewModel = viewModel,
+                        navController = navController,
                         onBack = { navController.popBackStack() }
                     )
                 }
+
+
+                composable("marketplace") {
+                    MarketplaceScreen(
+                        userId = userId,
+                        viewModel = viewModel,
+                        onBack = { navController.popBackStack() },
+                        onGoToForm = { navController.navigate("formulario_proveedor") }
+                    )
+                }
+
+                composable("formulario_proveedor") {
+                    FormularioProveedorScreen(
+                        userId = userId,
+                        viewModel = viewModel,
+                        onBack = { navController.popBackStack() },
+                        onGoToProducts = { navController.navigate("productos_proveedor") }
+                    )
+                }
+
+                composable("productos_proveedor") {
+                    ProductosProveedorScreen(
+                        userId = userId,
+                        onBack = {
+                            navController.navigate("marketplace") {
+                                popUpTo("marketplace") { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        }
+                    )
+                }
+                composable("admin_validacion") {
+                    ValidacionAdminScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
 
             }
 

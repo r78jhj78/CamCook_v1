@@ -11,12 +11,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.pruebafastapiconbuscadorylikes.ui.RecetasViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerfilScreen(
     userId: String,
     viewModel: RecetasViewModel,
+    navController: androidx.navigation.NavController,
     onBack: () -> Unit
 ) {
     val userData by viewModel.getUserData(userId).collectAsState(initial = null)
@@ -27,7 +29,8 @@ fun PerfilScreen(
 
     var isLoading by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
-
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val userEmail = currentUser?.email ?: ""
     LaunchedEffect(Unit) {
         viewModel.escucharVistasConTitulos(userId)
         viewModel.cargarInteracciones(userId)
@@ -57,6 +60,10 @@ fun PerfilScreen(
                     Text("Email: ${user.email}")
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Roles actuales: ${user.roles.joinToString(", ")}")
+                    if (user.vistas.containsKey("estado_validacion")) {
+                        val estado = user.vistas["estado_validacion"]
+                        Text("Estado de validación: $estado")
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
 
 
@@ -77,13 +84,13 @@ fun PerfilScreen(
 
 
                     interacciones?.let { data ->
-                        if (data.vistas.isNotEmpty()) {
+                        /*if (data.vistas.isNotEmpty()) {
                             Text("👀 Recetas vistas:")
                             data.vistas.forEach { receta ->
                                 Text("• ${receta.titulo}")
                             }
                             Spacer(modifier = Modifier.height(8.dp))
-                        }
+                        }*/
 
                         if (data.likes.isNotEmpty()) {
                             Text("❤️ Recetas con like:")
@@ -96,47 +103,15 @@ fun PerfilScreen(
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("Agregar o quitar roles:")
-
-
-                    RoleToggleButton(
-                        role = "chef",
-                        hasRole = user.roles.contains("chef"),
-                        onAdd = {
-                            isLoading = true
-                            viewModel.agregarRol(userId, "chef") {
-                                isLoading = false
-                                message = "Rol 'chef' añadido."
-                            }
-                        },
-                        onRemove = {
-                            isLoading = true
-                            viewModel.quitarRol(userId, "chef") {
-                                isLoading = false
-                                message = "Rol 'chef' removido."
-                            }
+                    if (userEmail == "equipodecamcook@gmail.com") {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { navController.navigate("admin_validacion") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("👑 Panel Admin (Validar Solicitudes)")
                         }
-                    )
-
-
-                    RoleToggleButton(
-                        role = "proveedor",
-                        hasRole = user.roles.contains("proveedor"),
-                        onAdd = {
-                            isLoading = true
-                            viewModel.agregarRol(userId, "proveedor") {
-                                isLoading = false
-                                message = "Rol 'proveedor' añadido."
-                            }
-                        },
-                        onRemove = {
-                            isLoading = true
-                            viewModel.quitarRol(userId, "proveedor") {
-                                isLoading = false
-                                message = "Rol 'proveedor' removido."
-                            }
-                        }
-                    )
+                    }
 
                     if (isLoading) {
                         Spacer(modifier = Modifier.height(16.dp))

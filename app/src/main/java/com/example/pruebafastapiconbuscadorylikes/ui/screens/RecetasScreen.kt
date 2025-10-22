@@ -47,6 +47,7 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.RestaurantMenu
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.IconButton
@@ -102,6 +103,15 @@ fun RecetasScreen(
                             imageVector = Icons.Default.Person,
                             contentDescription = "Perfil"
                         )
+                    }
+                    IconButton(
+                        onClick = { navController.navigate("marketplace") },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Default.Store, contentDescription = "Tienda")
+                            Text("Tienda", style = MaterialTheme.typography.labelSmall)
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

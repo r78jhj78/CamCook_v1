@@ -12,7 +12,12 @@
           "package_name": "com.example.camcook"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "163492793985-qanbr305ue8jsuj3f9t6hiogqehs3dqi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDjyDmyQSnHVVzrDubspCVNsSJ-xR1cu-o"
@@ -20,7 +25,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "163492793985-qanbr305ue8jsuj3f9t6hiogqehs3dqi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     },
@@ -31,7 +41,20 @@
           "package_name": "com.example.pruebafastapiconbuscadorylikes"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "163492793985-gn6c4f02b1ogv5omi5beclipidjv42la.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.pruebafastapiconbuscadorylikes",
+            "certificate_hash": "35be4ababd74ffce01385c0f6e62f0a19ff8b06e"
+          }
+        },
+        {
+          "client_id": "163492793985-qanbr305ue8jsuj3f9t6hiogqehs3dqi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDjyDmyQSnHVVzrDubspCVNsSJ-xR1cu-o"
@@ -39,7 +62,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "163492793985-qanbr305ue8jsuj3f9t6hiogqehs3dqi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     },
@@ -50,7 +78,12 @@
           "package_name": "com.example.yolo_cam_flutter"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "163492793985-qanbr305ue8jsuj3f9t6hiogqehs3dqi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDjyDmyQSnHVVzrDubspCVNsSJ-xR1cu-o"
@@ -58,7 +91,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "163492793985-qanbr305ue8jsuj3f9t6hiogqehs3dqi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

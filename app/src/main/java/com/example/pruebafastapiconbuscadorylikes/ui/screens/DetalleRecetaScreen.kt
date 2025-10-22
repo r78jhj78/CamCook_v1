@@ -1,20 +1,14 @@
 package com.example.pruebafastapiconbuscadorylikes.ui.screens
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -27,14 +21,17 @@ fun DetalleRecetaScreen(
     receta: Receta,
     onBack: () -> Unit,
     onLike: () -> Unit,
-    userId: String,
+    userId: String
 ) {
+    var isLiked by remember { mutableStateOf(receta.liked_by.containsKey(userId)) }
+    var likesCount by remember { mutableStateOf(receta.likes) }
+
     val ingredientesEstado = remember {
         mutableStateListOf<Boolean>().apply {
             repeat(receta.ingredientes.size) { add(false) }
         }
     }
-    val dioLike = receta.liked_by.contains(userId)
+
     Scaffold(
         topBar = {
             SmallTopAppBar(
@@ -48,7 +45,6 @@ fun DetalleRecetaScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // Imagen de la receta
             if (!receta.imagen_final_url.isNullOrEmpty()) {
                 Image(
                     painter = rememberAsyncImagePainter(receta.imagen_final_url),
@@ -63,28 +59,25 @@ fun DetalleRecetaScreen(
                 Spacer(Modifier.height(12.dp))
             }
 
-            // Descripción
             Text("📝 ${receta.descripcion}", style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(8.dp))
 
-            // Info básica
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                InfoChip("🔥 ${receta.calorias} kcal")
-                InfoChip("⏱️ ${receta.tiempoPreparacion}")
-                InfoChip("🍽️ ${receta.porciones} porciones")
+                InfoChip("🔥 ${receta.calorias ?: 0} kcal")
+                InfoChip("⏱️ ${receta.tiempoPreparacion ?: "?"}")
+                InfoChip("🍽️ ${receta.porciones ?: 0} porciones")
             }
 
             Spacer(Modifier.height(8.dp))
 
-            if (!receta.ingrediente_principal.isNullOrEmpty()) {
+            if (receta.ingrediente_principal.isNotEmpty()) {
                 Text("🌟 Ingrediente principal: ${receta.ingrediente_principal}")
                 Spacer(Modifier.height(8.dp))
             }
 
-            // Ingredientes con checkbox
             Text("🧂 Ingredientes", style = MaterialTheme.typography.titleSmall)
             Spacer(Modifier.height(6.dp))
             receta.ingredientes.forEachIndexed { index, ing ->
@@ -109,7 +102,6 @@ fun DetalleRecetaScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // Pasos
             if (receta.pasos.isNotEmpty()) {
                 Text("👨‍🍳 Pasos", style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.height(6.dp))
@@ -135,20 +127,20 @@ fun DetalleRecetaScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            if (!dioLike) {
-                Button(
-                    onClick = onLike,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("❤️ Like")
-                }
-            } else {
-                Button(
-                    onClick = onLike,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("💔 Quitar Like")
-                }
+            Button(
+                onClick = {
+                    onLike()
+                    if (isLiked) {
+                        isLiked = false
+                        likesCount = (likesCount - 1).coerceAtLeast(0)
+                    } else {
+                        isLiked = true
+                        likesCount++
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (isLiked) "💔 Quitar Like ($likesCount)" else "❤️ Dar Like ($likesCount)")
             }
 
             Spacer(Modifier.height(12.dp))
@@ -164,4 +156,5 @@ fun DetalleRecetaScreen(
         }
     }
 }
+
 

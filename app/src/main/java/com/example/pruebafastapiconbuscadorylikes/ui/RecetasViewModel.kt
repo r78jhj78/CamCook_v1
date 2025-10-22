@@ -84,7 +84,7 @@ class RecetasViewModel : ViewModel() {
             }
         }
     }
-    fun darLike(recetaId: String, uid: String) {
+    /*fun darLike(recetaId: String, uid: String) {
         viewModelScope.launch {
             try {
                 bloqueandoSnapshot = true
@@ -111,6 +111,45 @@ class RecetasViewModel : ViewModel() {
 
             } catch (e: Exception) {
                 e.printStackTrace()
+            } finally {
+                bloqueandoSnapshot = false
+            }
+        }
+    }*/
+    fun darLike(recetaId: String, uid: String) {
+        viewModelScope.launch {
+            try {
+                bloqueandoSnapshot = true
+
+                val recetaActual = _recetas.value.find { it.id == recetaId }
+                val yaDioLikeAntes = recetaActual?.liked_by?.containsKey(uid) == true
+
+                if (yaDioLikeAntes) {
+                    RetrofitClient.api.quitarLike(recetaId, LikeRequest(uid))
+                } else {
+                    RetrofitClient.api.darLike(recetaId, LikeRequest(uid))
+                }
+
+                _recetas.value = _recetas.value.map { receta ->
+                    if (receta.id == recetaId) {
+                        val nuevosLikes = if (yaDioLikeAntes) {
+                            (receta.likes - 1).coerceAtLeast(0)
+                        } else {
+                            receta.likes + 1
+                        }
+
+                        val nuevoMapa = receta.liked_by.toMutableMap().apply {
+                            if (yaDioLikeAntes) remove(uid) else put(uid, true)
+                        }
+
+                        receta.copy(likes = nuevosLikes, liked_by = nuevoMapa)
+                    } else receta
+                }
+
+                Log.d("Like", "❤️ Like actualizado correctamente (${if (yaDioLikeAntes) "quitado" else "añadido"})")
+
+            } catch (e: Exception) {
+                Log.e("Like", "❌ Error al dar like: ${e.message}")
             } finally {
                 bloqueandoSnapshot = false
             }

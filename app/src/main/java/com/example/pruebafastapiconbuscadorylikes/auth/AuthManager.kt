@@ -40,7 +40,15 @@ object AuthManager {
         auth.signInWithEmailAndPassword(email, password)
             .addOnSuccessListener { result ->
                 val uid = result.user?.uid ?: ""
-                onSuccess(uid)
+                firestore.collection("usuarios").document(uid).get()
+                    .addOnSuccessListener { doc ->
+                        val estado = doc.getString("estado_validacion")
+                        if (estado == "pendiente") {
+                            onError("Tu cuenta está pendiente de validación por el administrador.")
+                        } else {
+                            onSuccess(uid)
+                        }
+                    }
             }
             .addOnFailureListener { e -> onError(e.message ?: "Error al iniciar sesión") }
     }
@@ -48,4 +56,10 @@ object AuthManager {
     fun logout() {
         auth.signOut()
     }
+    fun resetPassword(email: String, onComplete: (Boolean) -> Unit) {
+        FirebaseAuth.getInstance()
+            .sendPasswordResetEmail(email)
+            .addOnCompleteListener { onComplete(it.isSuccessful) }
+    }
+
 }

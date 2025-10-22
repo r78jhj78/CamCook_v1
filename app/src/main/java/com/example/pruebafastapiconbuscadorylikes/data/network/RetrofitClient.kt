@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    private const val BASE_URL = "https://fastapibuscador-production.up.railway.app/" // 🔹 cambia por tu dominio Railway
+    private const val BASE_URL = "https://fastapireconocimiento-production.up.railway.app"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
