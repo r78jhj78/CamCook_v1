@@ -205,6 +205,12 @@ class MainActivity : ComponentActivity() {
                 }
 
                 composable("camera") {
+                    CameraScreen(
+                        navController = navController,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+                /*composable("camera") {
                     val context = LocalContext.current
                     val scope = rememberCoroutineScope()
                     val clarifaiService = remember { ClarifaiService() }
@@ -275,7 +281,7 @@ class MainActivity : ComponentActivity() {
                         },
                         onBack = { navController.popBackStack() }
                     )
-                }
+                }*/
 
 
                 composable("perfil") {
@@ -323,7 +329,31 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-
+                composable(
+                    route = "recetas/{query}",
+                    arguments = listOf(navArgument("query") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val query = backStackEntry.arguments?.getString("query") ?: ""
+                    RecetasScreen(
+                        navController = navController,
+                        viewModel = viewModel,
+                        userId = userId,
+                        initialQuery = query,
+                        onRecetaClick = { receta ->
+                            val recetaJson = Uri.encode(Gson().toJson(receta))
+                            navController.navigate("detalle_receta/${receta.id}")
+                        },
+                        onGoToProfile = { navController.navigate("perfil") },
+                        onGoToFavorites = { navController.navigate("favoritos") },
+                        onGoToSettings = { navController.navigate("configuracion") },
+                        onGoBackToInicio = {
+                            navController.navigate(Routes.RECETAS) {
+                                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        }
+                    )
+                }
             }
 
             }

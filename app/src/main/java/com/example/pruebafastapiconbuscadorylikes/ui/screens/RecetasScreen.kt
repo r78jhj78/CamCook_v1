@@ -69,17 +69,20 @@ fun RecetasScreen(
     onGoToProfile: () -> Unit,
     onGoToFavorites: () -> Unit,
     onGoToSettings: () -> Unit,
-    onGoBackToInicio: () -> Unit
+    onGoBackToInicio: () -> Unit,
+    initialQuery: String = ""
 ) {
     val recetas by viewModel.recetas.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    var query by remember { mutableStateOf("") }
+    var query by remember { mutableStateOf(initialQuery) }
     val listState = rememberSaveable(saver = LazyListState.Saver) {
         LazyListState()
     }
 
-    LaunchedEffect(recetas) {
-        if (recetas.isEmpty()) {
+    LaunchedEffect(initialQuery) {
+        if (initialQuery.isNotEmpty()) {
+            viewModel.buscarRecetas(initialQuery)
+        } else {
             viewModel.escucharTodasRecetas()
         }
     }

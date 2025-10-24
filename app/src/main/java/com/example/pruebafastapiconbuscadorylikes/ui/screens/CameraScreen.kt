@@ -1,7 +1,6 @@
 package com.example.pruebafastapiconbuscadorylikes.ui.screens
 
 import android.graphics.BitmapFactory
-import android.util.Log
 import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -21,10 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import coil.compose.AsyncImage
+import androidx.navigation.NavController
 import com.example.pruebafastapiconbuscadorylikes.data.network.ClarifaiService
-import com.example.pruebafastapiconbuscadorylikes.data.network.RetrofitClient
-import com.example.pruebafastapiconbuscadorylikes.model.Receta
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,7 +29,7 @@ import java.io.File
 
 @Composable
 fun CameraScreen(
-    onRecetasEncontradas: (List<String>) -> Unit,
+    navController: NavController,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -48,9 +45,7 @@ fun CameraScreen(
     val clarifaiService = remember { ClarifaiService() }
 
     AndroidView(factory = {
-        previewView.apply {
-            scaleType = PreviewView.ScaleType.FILL_CENTER
-        }
+        previewView.apply { scaleType = PreviewView.ScaleType.FILL_CENTER }
     }, modifier = Modifier.fillMaxSize())
 
     LaunchedEffect(cameraProviderFuture) {
@@ -70,18 +65,13 @@ fun CameraScreen(
         }
     }
 
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.BottomCenter
-    ) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         if (cargando) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
 
         Row(
-            Modifier
-                .padding(24.dp)
-                .fillMaxWidth(),
+            Modifier.padding(24.dp).fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Button(onClick = onBack) {
@@ -89,11 +79,7 @@ fun CameraScreen(
             }
 
             Button(onClick = {
-                val photoFile = File(
-                    outputDirectory,
-                    "IMG_${System.currentTimeMillis()}.jpg"
-                )
-
+                val photoFile = File(outputDirectory, "IMG_${System.currentTimeMillis()}.jpg")
                 val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
                 imageCapture?.takePicture(
@@ -101,30 +87,19 @@ fun CameraScreen(
                     executor,
                     object : ImageCapture.OnImageSavedCallback {
                         override fun onError(exc: ImageCaptureException) {
-                            exc.printStackTrace()
                             Toast.makeText(context, "Error al guardar foto", Toast.LENGTH_SHORT).show()
                         }
 
                         override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                             cargando = true
-
                             val bitmap = BitmapFactory.decodeFile(photoFile.absolutePath)
-
                             clarifaiService.detectarAlimento(bitmap) { alimento ->
                                 cargando = false
                                 if (alimento != null) {
                                     alimentoDetectado = alimento
                                     Toast.makeText(context, "🍎 Detectado: $alimento", Toast.LENGTH_LONG).show()
 
-                                    CoroutineScope(Dispatchers.IO).launch {
-                                        try {
-                                            val response = RetrofitClient.api.buscarRecetas(alimento)
-                                            Log.d("Clarifai", "Recetas encontradas: ${response.ids}")
-                                            onRecetasEncontradas(response.ids)
-                                        } catch (e: Exception) {
-                                            Log.e("Clarifai", "Error al buscar recetas: ${e.message}")
-                                        }
-                                    }
+                                    navController.navigate("recetas/${alimento}")
                                 } else {
                                     Toast.makeText(context, "No se detectó alimento", Toast.LENGTH_SHORT).show()
                                 }
@@ -136,16 +111,5 @@ fun CameraScreen(
                 Icon(Icons.Default.CameraAlt, contentDescription = "Tomar foto")
             }
         }
-    }
-
-    alimentoDetectado?.let {
-        AlertDialog(
-            onDismissRequest = { alimentoDetectado = null },
-            confirmButton = {
-                TextButton(onClick = { alimentoDetectado = null }) { Text("Aceptar") }
-            },
-            title = { Text("🍽️ Alimento detectado") },
-            text = { Text(it) }
-        )
     }
 }
