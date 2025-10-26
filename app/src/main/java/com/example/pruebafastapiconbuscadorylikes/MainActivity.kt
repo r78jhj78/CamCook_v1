@@ -59,10 +59,12 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.camera.view.PreviewView
+import com.example.pruebafastapiconbuscadorylikes.auth.AuthManager
 import com.example.pruebafastapiconbuscadorylikes.data.network.ClarifaiService
 import com.example.pruebafastapiconbuscadorylikes.data.network.ViewRequest
 import com.example.pruebafastapiconbuscadorylikes.model.Receta
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.FormularioProveedorScreen
+import com.example.pruebafastapiconbuscadorylikes.ui.screens.IngredientesScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.MarketplaceScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.PerfilScreen
 import kotlinx.coroutines.cancel
@@ -82,13 +84,23 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             val viewModel: RecetasViewModel = viewModel()
-            var userId by remember { mutableStateOf("") }
             var recetaDetectada by remember { mutableStateOf<Receta?>(null) }
             var mostrarDialogo by remember { mutableStateOf(false) }
+            val currentUser = AuthManager.currentUser
+            var userId by remember { mutableStateOf(currentUser?.uid ?: "viewer") }
+            var userRoles by remember { mutableStateOf(listOf("viewer")) }
+
+            LaunchedEffect(currentUser) {
+                if (currentUser != null) {
+                    AuthManager.getUserRoles(currentUser.uid) { roles ->
+                        userRoles = roles + "viewer"
+                    }
+                }
+            }
 
             NavHost(
                 navController = navController,
-                startDestination = Routes.LOGIN
+                startDestination = Routes.RECETAS
             ) {
                 composable(Routes.LOGIN) {
                     LoginScreen(
@@ -163,7 +175,6 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // 🔹 Pantalla de detalle de receta (recibe solo el ID)
                 composable(
                     route = "detalle_receta_json/{recetaId}",
                     arguments = listOf(navArgument("recetaId") { type = NavType.StringType })
@@ -173,7 +184,6 @@ class MainActivity : ComponentActivity() {
                     val context = LocalContext.current
                     val scope = rememberCoroutineScope()
 
-                    // ✅ Carga la receta desde la API y registra una vista
                     LaunchedEffect(recetaId) {
                         try {
                             val recetaApi = RetrofitClient.api.obtenerRecetaPorId(recetaId)
@@ -210,79 +220,6 @@ class MainActivity : ComponentActivity() {
                         onBack = { navController.popBackStack() }
                     )
                 }
-                /*composable("camera") {
-                    val context = LocalContext.current
-                    val scope = rememberCoroutineScope()
-                    val clarifaiService = remember { ClarifaiService() }
-
-                    var mostrarDialogo by remember { mutableStateOf(false) }
-                    var recetaDetectada by remember { mutableStateOf<Receta?>(null) }
-                    var dialogMessage by remember { mutableStateOf("") }
-                    var mostrarDialogoSimple by remember { mutableStateOf(false) }
-
-                    if (mostrarDialogo && recetaDetectada != null) {
-                        PreviewRecetaDialog(
-                            show = mostrarDialogo,
-                            receta = recetaDetectada,
-                            onDismiss = { mostrarDialogo = false },
-                            onVerReceta = {
-                                if (userId.isNotEmpty()) {
-                                    navController.navigate("detalle_receta_json/${recetaDetectada?.id}")
-                                } else {
-                                    Toast.makeText(context, "Debes iniciar sesión para ver detalles", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        )
-                    }
-
-                    CameraScreen(
-                        onImageCaptured = { photoFile ->
-                            val bitmap = BitmapFactory.decodeFile(photoFile.absolutePath)
-                            Toast.makeText(context, "Analizando imagen con Clarifai...", Toast.LENGTH_SHORT).show()
-
-                            clarifaiService.detectarAlimento(bitmap) { alimento ->
-                                if (alimento != null) {
-                                    Log.d("Clarifai", "🍎 Alimento detectado: $alimento")
-                                    Toast.makeText(context, "Detectado: $alimento", Toast.LENGTH_LONG).show()
-
-                                    scope.launch(Dispatchers.IO) {
-                                        try {
-                                            val response = RetrofitClient.api.buscarRecetas(alimento)
-                                            val ids = response.ids
-
-                                            if (ids.isNotEmpty()) {
-                                                val primeraId = ids.first()
-                                                Log.d("Clarifai", "🧾 Buscando detalles de receta ID: $primeraId")
-
-                                                val receta = RetrofitClient.api.obtenerRecetaPorId(primeraId)
-
-                                                withContext(Dispatchers.Main) {
-                                                    recetaDetectada = receta
-                                                    mostrarDialogo = true
-                                                }
-                                            } else {
-                                                withContext(Dispatchers.Main) {
-                                                    dialogMessage = "No se encontraron recetas con $alimento"
-                                                    mostrarDialogoSimple = true
-                                                }
-                                            }
-                                        } catch (e: Exception) {
-                                            Log.e("Clarifai", "Error buscando recetas: ${e.message}")
-                                            withContext(Dispatchers.Main) {
-                                                dialogMessage = "Error buscando recetas"
-                                                mostrarDialogoSimple = true
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    Toast.makeText(context, "No se detectó ningún alimento.", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        },
-                        onBack = { navController.popBackStack() }
-                    )
-                }*/
-
 
                 composable("perfil") {
                     PerfilScreen(
@@ -292,7 +229,6 @@ class MainActivity : ComponentActivity() {
                         onBack = { navController.popBackStack() }
                     )
                 }
-
 
                 composable("marketplace") {
                     MarketplaceScreen(
@@ -354,6 +290,14 @@ class MainActivity : ComponentActivity() {
                         }
                     )
                 }
+                composable("ingredientes") {
+                    IngredientesScreen(
+                        navController = navController,
+                        viewModel = viewModel,
+                        onGoBackToInicio = { navController.navigate("recetas") }
+                    )
+                }
+
             }
 
             }

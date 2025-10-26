@@ -21,6 +21,12 @@ fun PerfilScreen(
     navController: androidx.navigation.NavController,
     onBack: () -> Unit
 ) {
+    if (userId == "viewer") {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Debes iniciar sesión para ver tu perfil.")
+        }
+        return
+    }
     val userData by viewModel.getUserData(userId).collectAsState(initial = null)
 
     val vistasPorReceta by viewModel.vistasPorReceta.collectAsState()

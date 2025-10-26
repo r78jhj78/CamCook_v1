@@ -61,5 +61,15 @@ object AuthManager {
             .sendPasswordResetEmail(email)
             .addOnCompleteListener { onComplete(it.isSuccessful) }
     }
+    fun getUserRoles(uid: String, onResult: (List<String>) -> Unit) {
+        firestore.collection("usuarios").document(uid).get()
+            .addOnSuccessListener { doc ->
+                val roles = doc.get("roles") as? List<String> ?: listOf("usuario")
+                onResult(roles)
+            }
+            .addOnFailureListener { _ ->
+                onResult(listOf("usuario"))
+            }
+    }
 
 }

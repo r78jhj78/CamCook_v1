@@ -1,5 +1,6 @@
 package com.example.pruebafastapiconbuscadorylikes.ui.screens
 
+import android.widget.Toast
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
@@ -57,6 +58,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.pruebafastapiconbuscadorylikes.navigation.Routes
 import com.example.pruebafastapiconbuscadorylikes.utils.PermissionRequester
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -101,14 +103,26 @@ fun RecetasScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onGoToProfile) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Perfil"
-                        )
+                    val context = LocalContext.current
+
+                    IconButton(onClick = {
+                        if (userId == "viewer") {
+                            navController.navigate(Routes.LOGIN)
+                        } else {
+                            onGoToProfile()
+                        }
+                    }) {
+                        Icon(imageVector = Icons.Default.Person, contentDescription = "Perfil")
                     }
+
                     IconButton(
-                        onClick = { navController.navigate("marketplace") },
+                        onClick = {
+                            if (userId == "viewer") {
+                                Toast.makeText(context, "Inicia sesión para acceder a la tienda", Toast.LENGTH_SHORT).show()
+                            } else {
+                                navController.navigate("marketplace")
+                            }
+                        },
                         modifier = Modifier.weight(1f)
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -124,7 +138,7 @@ fun RecetasScreen(
             )
         },
         bottomBar = {
-            BottomAppBar(
+            /*BottomAppBar(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
@@ -140,7 +154,11 @@ fun RecetasScreen(
 
                 IconButton(
                     onClick = {
-                        shouldRequestPermission = true
+                        if (userId == "viewer") {
+                            navController.navigate(Routes.LOGIN)
+                        } else {
+                            shouldRequestPermission = true
+                        }
                     },
                     modifier = Modifier.weight(1f)
                 ) {
@@ -161,6 +179,53 @@ fun RecetasScreen(
                 }
 
                 IconButton(onClick = onGoToFavorites, modifier = Modifier.weight(1f)) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.RestaurantMenu, contentDescription = "Ingredientes")
+                        Text("Ingredientes", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            }*/
+            BottomAppBar(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ) {
+                IconButton(onClick = { navController.navigate("recetas") }, modifier = Modifier.weight(1f)) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.List, contentDescription = "Recetas")
+                        Text("Recetas", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+
+                val context = LocalContext.current
+                var shouldRequestPermission by remember { mutableStateOf(false) }
+
+                IconButton(
+                    onClick = {
+                        if (userId == "viewer") {
+                            navController.navigate("login")
+                        } else {
+                            shouldRequestPermission = true
+                        }
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.CameraAlt, contentDescription = "Cámara")
+                        Text("Cámara", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+
+                if (shouldRequestPermission) {
+                    PermissionRequester(
+                        permission = android.Manifest.permission.CAMERA,
+                        onPermissionGranted = {
+                            shouldRequestPermission = false
+                            navController.navigate("camera")
+                        }
+                    )
+                }
+
+                IconButton(onClick = { navController.navigate("ingredientes") }, modifier = Modifier.weight(1f)) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Default.RestaurantMenu, contentDescription = "Ingredientes")
                         Text("Ingredientes", style = MaterialTheme.typography.labelSmall)
@@ -209,7 +274,8 @@ fun RecetasScreen(
                             onClick = {
                                 viewModel.registrarVista(receta.id, userId)
                                 onRecetaClick(receta)
-                            }
+                            },
+                            navController = navController,
                         )
                     }
                 }
@@ -236,7 +302,8 @@ fun RecetaCard(
     receta: Receta,
     userId: String,
     onLike: () -> Unit,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    navController: NavController,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val dioLike = receta.liked_by.contains(userId)
@@ -245,6 +312,7 @@ fun RecetaCard(
             repeat(receta.ingredientes.size) { add(false) }
         }
     }
+    val context = LocalContext.current
 
     Card(
         modifier = Modifier
@@ -270,7 +338,13 @@ fun RecetaCard(
                 Text(receta.descripcion, style = MaterialTheme.typography.bodySmall)
             }
 
-            IconButton(onClick = onLike, modifier = Modifier.align(Alignment.End)) {
+            IconButton(onClick = {
+                if (userId == "viewer") {
+                    navController.navigate(Routes.LOGIN)
+                } else {
+                    onLike()
+                }
+            }, modifier = Modifier.align(Alignment.End)) {
                 Icon(
                     imageVector = if (dioLike) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                     contentDescription = "Like",

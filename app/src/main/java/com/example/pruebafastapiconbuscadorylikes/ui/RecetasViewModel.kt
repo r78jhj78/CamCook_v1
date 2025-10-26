@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.example.pruebafastapiconbuscadorylikes.data.network.ViewRequest
+import com.example.pruebafastapiconbuscadorylikes.model.Ingrediente
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -30,7 +31,8 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 
 class RecetasViewModel : ViewModel() {
-
+    private val _ingredientes = MutableStateFlow<List<Ingrediente>>(emptyList())
+    val ingredientes: StateFlow<List<Ingrediente>> = _ingredientes
     private val _interacciones = MutableStateFlow<InteraccionesResponse?>(null)
     val interacciones = _interacciones.asStateFlow()
     private val _vistasPorReceta = MutableStateFlow<Map<String, Int>>(emptyMap())
@@ -215,26 +217,6 @@ class RecetasViewModel : ViewModel() {
         awaitClose { listener.remove() }
     }
 
-    fun agregarRol(userId: String, nuevoRol: String, onComplete: () -> Unit) {
-        val db = Firebase.firestore
-        val docRef = db.collection("usuarios").document(userId)
-
-        docRef.update("roles", FieldValue.arrayUnion(nuevoRol))
-            .addOnSuccessListener { onComplete() }
-            .addOnFailureListener { Log.e("Firebase", "Error agregando rol", it) }
-    }
-
-    fun quitarRol(userId: String, rol: String, onComplete: () -> Unit) {
-        if (rol == "usuario") return
-
-        val db = Firebase.firestore
-        val docRef = db.collection("usuarios").document(userId)
-
-        docRef.update("roles", FieldValue.arrayRemove(rol))
-            .addOnSuccessListener { onComplete() }
-            .addOnFailureListener { Log.e("Firebase", "Error quitando rol", it) }
-    }
-
     fun obtenerRecetaPorId(recetaId: String, onSuccess: (String) -> Unit) {
         val db = FirebaseFirestore.getInstance()
         db.collection("recetas").document(recetaId).get()
@@ -279,5 +261,35 @@ class RecetasViewModel : ViewModel() {
                 Log.e("Perfil", "❌ Error al obtener interacciones", e)
             }
         }
+    }
+
+    fun escucharTodosIngredientes() {
+        firestore.collection("ingredientes")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    println("❌ Error al escuchar ingredientes: ${error.message}")
+                    return@addSnapshotListener
+                }
+                val lista = snapshot?.toObjects(Ingrediente::class.java) ?: emptyList()
+                _ingredientes.value = lista
+            }
+    }
+    fun buscarIngrediente(nombre: String) {
+        if (nombre.isBlank()) {
+            escucharTodosIngredientes()
+            return
+        }
+
+        firestore.collection("ingredientes")
+            .whereGreaterThanOrEqualTo("nombre", nombre)
+            .whereLessThanOrEqualTo("nombre", nombre + "\uf8ff")
+            .get()
+            .addOnSuccessListener { result ->
+                val lista = result.toObjects(Ingrediente::class.java)
+                _ingredientes.value = lista
+            }
+            .addOnFailureListener { e ->
+                println("❌ Error al buscar ingrediente: ${e.message}")
+            }
     }
 }
