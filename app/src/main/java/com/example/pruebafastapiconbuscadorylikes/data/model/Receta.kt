@@ -50,3 +50,9 @@ data class Paso(
     val imagen_url: String = "",
     val orden: Int = 0
 )
+data class IngredienteSeleccionado(
+    val ingrediente: Ingrediente,
+    var precio: String = "",
+    var cantidad: String = "",
+    var unidad: String = ""
+)

@@ -63,6 +63,8 @@ import com.example.pruebafastapiconbuscadorylikes.auth.AuthManager
 import com.example.pruebafastapiconbuscadorylikes.data.network.ClarifaiService
 import com.example.pruebafastapiconbuscadorylikes.data.network.ViewRequest
 import com.example.pruebafastapiconbuscadorylikes.model.Receta
+import com.example.pruebafastapiconbuscadorylikes.ui.screens.FormularioProductosIngredientesScreen
+import com.example.pruebafastapiconbuscadorylikes.ui.screens.FormularioProductosRecetaScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.FormularioProveedorScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.IngredientesScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.MarketplaceScreen
@@ -239,15 +241,6 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                composable("formulario_proveedor") {
-                    FormularioProveedorScreen(
-                        userId = userId,
-                        viewModel = viewModel,
-                        onBack = { navController.popBackStack() },
-                        onGoToProducts = { navController.navigate("productos_proveedor") }
-                    )
-                }
-
                 composable("productos_proveedor") {
                     ProductosProveedorScreen(
                         userId = userId,
@@ -295,6 +288,31 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         viewModel = viewModel,
                         onGoBackToInicio = { navController.navigate("recetas") }
+                    )
+                }
+                composable("formulario_proveedor") {
+                    FormularioProveedorScreen(
+                        userId = userId,
+                        viewModel = viewModel,
+                        navController = navController,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+                composable("formulario_productos_receta") {
+                    FormularioProductosRecetaScreen(
+                        userId = userId,
+                        viewModel = viewModel,
+                        navController = navController,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable("formulario_productos_ingredientes") {
+                    FormularioProductosIngredientesScreen(
+                        userId = userId,
+                        viewModel = viewModel,
+                        navController = navController,
+                        onBack = { navController.popBackStack() }
                     )
                 }
 
@@ -420,7 +438,6 @@ fun CameraCaptureContent(
             Text(text = "Capturar")
         }
 
-        // Botón para regresar
         androidx.compose.material3.Button(
             modifier = Modifier
                 .align(androidx.compose.ui.Alignment.TopStart)
@@ -432,7 +449,6 @@ fun CameraCaptureContent(
     }
 }
 
-// Función para crear archivo de imagen con timestamp
 fun createImageFile(context: Context): File {
     val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(System.currentTimeMillis())
     val storageDir = context.cacheDir

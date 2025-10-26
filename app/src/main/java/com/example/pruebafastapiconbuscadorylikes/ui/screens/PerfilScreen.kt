@@ -119,6 +119,45 @@ fun PerfilScreen(
                         }
                     }
 
+                    var showDialog by remember { mutableStateOf(false) }
+
+                    if (showDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showDialog = false },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    FirebaseAuth.getInstance().signOut()
+                                    showDialog = false
+                                    navController.navigate("login") {
+                                        popUpTo("marketplace") { inclusive = true }
+                                    }
+                                }) {
+                                    Text("Sí, cerrar sesión")
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showDialog = false }) {
+                                    Text("Cancelar")
+                                }
+                            },
+                            title = { Text("¿Cerrar sesión?") },
+                            text = { Text("Tu sesión se cerrará y deberás iniciar nuevamente.") }
+                        )
+                    }
+
+                    Button(
+                        onClick = { showDialog = true },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("🚪 Cerrar sesión", color = MaterialTheme.colorScheme.onErrorContainer)
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+
                     if (isLoading) {
                         Spacer(modifier = Modifier.height(16.dp))
                         CircularProgressIndicator()

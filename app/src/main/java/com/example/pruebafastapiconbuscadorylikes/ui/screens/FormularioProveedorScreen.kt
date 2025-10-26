@@ -29,8 +29,8 @@ import kotlinx.coroutines.delay
 fun FormularioProveedorScreen(
     userId: String,
     viewModel: RecetasViewModel,
-    onBack: () -> Unit,
-    onGoToProducts: () -> Unit
+    navController: androidx.navigation.NavController,
+    onBack: () -> Unit
 ) {
     var nombre by remember { mutableStateOf("") }
     var tipoProducto by remember { mutableStateOf("") }
@@ -43,11 +43,15 @@ fun FormularioProveedorScreen(
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         imagenUri = uri
     }
+    var expanded by remember { mutableStateOf(false) }
 
     val tipos = listOf("Frutas", "Verduras", "Carnes", "Huevos")
     val db = FirebaseFirestore.getInstance()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val tiposProveedor = listOf("Recetas completas", "Ingredientes")
+    var tipoProveedor by remember { mutableStateOf("") }
+    var telefono by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         db.collection("proveedores").document(userId).get()
@@ -64,11 +68,6 @@ fun FormularioProveedorScreen(
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
-        return
-    }
-
-    if (yaRegistrado) {
-        onGoToProducts()
         return
     }
 
@@ -105,22 +104,20 @@ fun FormularioProveedorScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Combo tipo de producto
-            var expanded by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
                 OutlinedTextField(
-                    value = tipoProducto,
+                    value = tipoProveedor,
                     onValueChange = {},
-                    label = { Text("Tipo de producto") },
+                    label = { Text("Tipo de proveedor") },
                     readOnly = true,
                     modifier = Modifier.menuAnchor().fillMaxWidth()
                 )
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    tipos.forEach { tipo ->
+                    tiposProveedor.forEach { tipo ->
                         DropdownMenuItem(
                             text = { Text(tipo) },
                             onClick = {
-                                tipoProducto = tipo
+                                tipoProveedor = tipo
                                 expanded = false
                             }
                         )
@@ -128,12 +125,11 @@ fun FormularioProveedorScreen(
                 }
             }
 
-            // 📸 Selector de imagen
             Button(onClick = { launcher.launch("image/*") }, modifier = Modifier.fillMaxWidth()) {
                 Text(if (imagenUri == null) "📷 Seleccionar imagen" else "✅ Imagen seleccionada")
             }
 
-            // Preview de imagen seleccionada
+
             imagenUri?.let {
                 Image(
                     painter = rememberAsyncImagePainter(it),
@@ -144,9 +140,16 @@ fun FormularioProveedorScreen(
                 )
             }
 
+            OutlinedTextField(
+                value = telefono,
+                onValueChange = { telefono = it },
+                label = { Text("Número o link de WhatsApp") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
             Button(
                 onClick = {
-                    if (nombre.isNotEmpty() && tipoProducto.isNotEmpty() && imagenUri != null) {
+                    if (nombre.isNotEmpty() && tipoProveedor.isNotEmpty() && imagenUri != null) {
                         mensaje = "⏳ Subiendo imagen..."
                         scope.launch(Dispatchers.IO) {
                             val imageUrl = ImgBBApi.uploadImage(context, imagenUri!!)
@@ -154,8 +157,10 @@ fun FormularioProveedorScreen(
                                 val data = hashMapOf(
                                     "userId" to userId,
                                     "nombre" to nombre,
+                                    "tipoProveedor" to tipoProveedor,
                                     "tipoProducto" to tipoProducto,
                                     "descripcion" to descripcion,
+                                    "telefono" to telefono,
                                     "imagen" to imageUrl
                                 )
 
@@ -184,7 +189,11 @@ fun FormularioProveedorScreen(
                                                 mensaje = "📨 Se envió tu solicitud. Espera la validación del admin."
                                                 scope.launch {
                                                     delay(2500)
-                                                    onGoToProducts()
+                                                    if (tipoProveedor == "Recetas completas") {
+                                                        navController.navigate("formulario_productos_receta")
+                                                    } else {
+                                                        navController.navigate("formulario_productos_ingredientes")
+                                                    }
                                                 }
                                             } else {
                                                 mensaje = "⚠️ Error al marcar como pendiente"
