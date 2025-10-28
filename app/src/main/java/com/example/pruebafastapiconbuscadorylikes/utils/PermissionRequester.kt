@@ -32,7 +32,6 @@ fun PermissionRequester(
             }
 
             ActivityCompat.shouldShowRequestPermissionRationale(activity!!, permission) -> {
-                // Podrías mostrar una explicación aquí antes de lanzar la petición
                 permissionLauncher.launch(permission)
             }
 

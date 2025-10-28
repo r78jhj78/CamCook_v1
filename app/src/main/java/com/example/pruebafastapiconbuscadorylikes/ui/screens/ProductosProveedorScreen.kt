@@ -36,7 +36,6 @@ fun ProductosProveedorScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // 🔁 Escuchar productos del proveedor en tiempo real
     LaunchedEffect(Unit) {
         db.collection("proveedores").document(userId)
             .collection("productos")
@@ -45,7 +44,6 @@ fun ProductosProveedorScreen(
             }
     }
 
-    // 📸 Seleccionar imagen desde galería
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri -> imagenUri = uri }
@@ -68,7 +66,6 @@ fun ProductosProveedorScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // 🧾 Campos
             OutlinedTextField(
                 value = nombre,
                 onValueChange = { nombre = it },
@@ -83,7 +80,6 @@ fun ProductosProveedorScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // 📷 Selector de imagen
             Button(onClick = { launcher.launch("image/*") }, modifier = Modifier.fillMaxWidth()) {
                 Text(if (imagenUri != null) "✅ Imagen seleccionada" else "📷 Seleccionar imagen")
             }
@@ -98,7 +94,6 @@ fun ProductosProveedorScreen(
                 )
             }
 
-            // 🚀 Botón para subir producto
             Button(
                 onClick = {
                     if (nombre.isEmpty()) {
@@ -154,7 +149,6 @@ fun ProductosProveedorScreen(
             Divider(Modifier.padding(vertical = 8.dp))
             Text("🛒 Productos registrados:", style = MaterialTheme.typography.titleMedium)
 
-            // 📋 Lista de productos
             LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 items(productos.size) { i ->
                     val p = productos[i]

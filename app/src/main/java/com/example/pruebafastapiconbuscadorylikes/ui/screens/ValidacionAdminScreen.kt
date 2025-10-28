@@ -1,43 +1,67 @@
-package com.example.pruebafastapiconbuscadorylikes.ui.screens
+package com.example.pruebafastapiconbuscadorylikes.data.manager
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ValidacionAdminScreen(
+    navController: NavController,
     onBack: () -> Unit
 ) {
     val db = FirebaseFirestore.getInstance()
     val currentUser = FirebaseAuth.getInstance().currentUser
     val adminEmail = "equipodecamcook@gmail.com"
+    val scope = rememberCoroutineScope()
 
     var pendientes by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
-    var mensaje by remember { mutableStateOf("") }
     var cargando by remember { mutableStateOf(true) }
 
-    // 🔒 Restringir acceso solo al correo del admin
     if (currentUser?.email != adminEmail) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
+        Box(Modifier.fillMaxSize(), Alignment.Center) {
             Text("🚫 No tienes permisos para acceder a esta pantalla.")
         }
         return
     }
 
-    // 🔁 Escucha en tiempo real solo los proveedores pendientes
     LaunchedEffect(Unit) {
         db.collection("proveedores")
             .whereEqualTo("estado_validacion", "pendiente")
@@ -54,7 +78,7 @@ fun ValidacionAdminScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("👑 Panel de Validación de Proveedores") },
+                title = { Text("👑 Validación de Proveedores") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
@@ -64,12 +88,12 @@ fun ValidacionAdminScreen(
         }
     ) { padding ->
         Column(
-            modifier = Modifier
+            Modifier
                 .padding(padding)
                 .padding(16.dp)
         ) {
             if (cargando) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxSize(), Alignment.Center) {
                     CircularProgressIndicator()
                 }
             } else if (pendientes.isEmpty()) {
@@ -78,25 +102,31 @@ fun ValidacionAdminScreen(
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(pendientes) { prov ->
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    navController.navigate("detalle_proveedor/${prov["uid"]}")
+                                },
                             elevation = CardDefaults.cardElevation(6.dp)
                         ) {
-                            Column(
-                                modifier = Modifier.padding(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
+                            Column(Modifier.padding(12.dp)) {
                                 Text("🏪 ${prov["nombre"] ?: "Sin nombre"}", style = MaterialTheme.typography.titleMedium)
-                                Text("🧺 Tipo: ${prov["tipoProducto"] ?: "No especificado"}")
-                                Text("📧 Usuario: ${prov["userId"] ?: "Desconocido"}")
+                                Text("🧺 Tipo: ${prov["tipoProveedor"] ?: "No especificado"}")
+                                Text("📞 Teléfono: ${prov["telefono"] ?: "N/A"}")
 
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 8.dp)
                                 ) {
                                     Button(
                                         onClick = {
-                                            aprobarProveedor(db, prov["uid"].toString()) {
-                                                mensaje = if (it) "✅ Proveedor aprobado" else "❌ Error al aprobar"
+                                            scope.launch {
+                                                val ok = ValidacionManager.aprobarProveedor(prov["uid"].toString())
+                                                if (ok) {
+                                                    // Mensaje o acción adiciona
+                                                }
                                             }
                                         },
                                         colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.primary)
@@ -106,8 +136,11 @@ fun ValidacionAdminScreen(
 
                                     OutlinedButton(
                                         onClick = {
-                                            rechazarProveedor(db, prov["uid"].toString()) {
-                                                mensaje = if (it) "🚫 Rechazado" else "❌ Error al rechazar"
+                                            scope.launch {
+                                                val ok = ValidacionManager.rechazarProveedor(prov["uid"].toString(), motivo = "No cumple requisitos")
+                                                if (ok) {
+                                                    // Mensaje o acción adicional
+                                                }
                                             }
                                         }
                                     ) {
@@ -119,37 +152,10 @@ fun ValidacionAdminScreen(
                     }
                 }
             }
-
-            if (mensaje.isNotEmpty()) {
-                Spacer(Modifier.height(12.dp))
-                Text(mensaje, color = MaterialTheme.colorScheme.primary)
-            }
         }
     }
 }
 
-// ✅ Aprobar proveedor: actualiza `estado_validacion`
-private fun aprobarProveedor(db: FirebaseFirestore, uid: String, onResult: (Boolean) -> Unit) {
-    db.collection("proveedores").document(uid)
-        .update("estado_validacion", "aprobado")
-        .addOnSuccessListener {
-            // Opcional: también marca en el documento del usuario si lo tienes
-            db.collection("usuarios").document(uid)
-                .update("estado_validacion", "aprobado")
-                .addOnSuccessListener { onResult(true) }
-                .addOnFailureListener { onResult(false) }
-        }
-        .addOnFailureListener { onResult(false) }
-}
 
-private fun rechazarProveedor(db: FirebaseFirestore, uid: String, onResult: (Boolean) -> Unit) {
-    db.collection("proveedores").document(uid)
-        .update("estado_validacion", "rechazado")
-        .addOnSuccessListener {
-            db.collection("usuarios").document(uid)
-                .update("estado_validacion", "rechazado")
-                .addOnSuccessListener { onResult(true) }
-                .addOnFailureListener { onResult(false) }
-        }
-        .addOnFailureListener { onResult(false) }
-}
+
+

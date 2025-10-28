@@ -19,6 +19,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,30 +30,26 @@ fun FormularioProductosRecetaScreen(
     navController: androidx.navigation.NavController,
     onBack: () -> Unit
 ) {
-    data class RecetaSeleccionada(
-        val receta: Receta,
-        var precio: String = ""
-    )
+    data class RecetaSeleccionada(val receta: Receta, var precio: String = "")
 
-    var recetas by remember { mutableStateOf(listOf<Receta>()) }
-    var recetasSeleccionadas by remember { mutableStateOf(listOf<RecetaSeleccionada>()) }
+    val recetas by viewModel.recetas.collectAsState(initial = emptyList())
+    var seleccionadas by remember { mutableStateOf(listOf<RecetaSeleccionada>()) }
     var contacto by remember { mutableStateOf("") }
     var mensaje by remember { mutableStateOf<String?>(null) }
+    var cargando by remember { mutableStateOf(true) }
 
     val db = FirebaseFirestore.getInstance()
     val scope = rememberCoroutineScope()
 
-    // 🔄 Cargar recetas desde ViewModel
-    LaunchedEffect(Unit) {
-        viewModel.recetas.collect { recetas = it }
-    }
-
-    // 🔄 Cargar contacto del proveedor
-    LaunchedEffect(Unit) {
-        db.collection("proveedores").document(userId).get()
-            .addOnSuccessListener { doc ->
-                contacto = doc.getString("telefono") ?: ""
-            }
+    LaunchedEffect(userId) {
+        try {
+            val doc = db.collection("proveedores").document(userId).get().await()
+            contacto = doc.getString("telefono") ?: ""
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            cargando = false
+        }
     }
 
     Scaffold(
@@ -67,43 +64,47 @@ fun FormularioProductosRecetaScreen(
             )
         }
     ) { padding ->
+        if (cargando) {
+            Box(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+            return@Scaffold
+        }
 
-        // 🌍 Scroll general para toda la vista
         LazyColumn(
             modifier = Modifier
                 .padding(padding)
-                .padding(16.dp)
-                .fillMaxSize(),
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
             item {
                 Text(
-                    "Selecciona una o más recetas para vender.\nToca una receta para marcarla o desmarcarla.",
+                    "Selecciona una o más recetas para vender.",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
 
-            // 📋 Lista de recetas disponibles
             items(recetas.size) { i ->
                 val receta = recetas[i]
-                val seleccionada = recetasSeleccionadas.any { it.receta.id == receta.id }
+                val seleccionada = seleccionadas.any { it.receta.id == receta.id }
 
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            recetasSeleccionadas =
-                                if (seleccionada) {
-                                    recetasSeleccionadas.filterNot { it.receta.id == receta.id }
-                                } else {
-                                    recetasSeleccionadas + RecetaSeleccionada(receta)
-                                }
+                            seleccionadas =
+                                if (seleccionada)
+                                    seleccionadas.filterNot { it.receta.id == receta.id }
+                                else
+                                    seleccionadas + RecetaSeleccionada(receta)
                         },
                     colors = if (seleccionada)
-                        CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
-                        )
+                        CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                     else
                         CardDefaults.cardColors()
                 ) {
@@ -133,8 +134,7 @@ fun FormularioProductosRecetaScreen(
                 }
             }
 
-            // 🔢 Campos dinámicos para las recetas seleccionadas
-            if (recetasSeleccionadas.isNotEmpty()) {
+            if (seleccionadas.isNotEmpty()) {
                 item {
                     Divider()
                     Text(
@@ -143,10 +143,8 @@ fun FormularioProductosRecetaScreen(
                     )
                 }
 
-                items(recetasSeleccionadas.size) { index ->
-                    val seleccion = recetasSeleccionadas[index]
-                    val receta = seleccion.receta
-
+                items(seleccionadas.size) { index ->
+                    val sel = seleccionadas[index]
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -155,20 +153,20 @@ fun FormularioProductosRecetaScreen(
                             modifier = Modifier.padding(12.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text(
-                                text = receta.titulo,
-                                style = MaterialTheme.typography.titleSmall
-                            )
-
+                            Text(sel.receta.titulo)
                             OutlinedTextField(
-                                value = seleccion.precio,
+                                value = sel.precio,
                                 onValueChange = { nuevo ->
-                                    recetasSeleccionadas = recetasSeleccionadas.toMutableList().also {
-                                        it[index] = it[index].copy(precio = nuevo)
+                                    val limpio = nuevo.trim().replace(",", ".")
+                                    if (limpio.isEmpty() || limpio.matches(Regex("^\\d*\\.?\\d*\$"))) {
+                                        seleccionadas = seleccionadas.toMutableList().also {
+                                            it[index] = it[index].copy(precio = limpio)
+                                        }
                                     }
                                 },
-                                label = { Text("💰 Precio para ${receta.titulo}") },
-                                modifier = Modifier.fillMaxWidth()
+                                label = { Text("💰 Precio (Bs)") },
+                                placeholder = { Text("Ej: 25.00") },
+                                singleLine = true
                             )
                         }
                     }
@@ -176,57 +174,56 @@ fun FormularioProductosRecetaScreen(
 
                 item {
                     Button(
-                        onClick = { recetasSeleccionadas = emptyList() },
+                        onClick = { seleccionadas = emptyList() },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        )
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer)
                     ) {
                         Text("🗑 Limpiar selección")
                     }
                 }
             }
 
-            // 🚀 Botón final
             item {
                 Spacer(Modifier.height(12.dp))
                 Button(
                     onClick = {
-                        if (recetasSeleccionadas.isEmpty()) {
+                        if (seleccionadas.isEmpty()) {
                             mensaje = "⚠️ Selecciona al menos una receta"
                             return@Button
                         }
 
-                        if (recetasSeleccionadas.any { it.precio.isBlank() }) {
+                        if (seleccionadas.any { it.precio.isBlank() }) {
                             mensaje = "⚠️ Completa los precios antes de publicar"
                             return@Button
                         }
 
                         scope.launch(Dispatchers.IO) {
-                            recetasSeleccionadas.forEach { sel ->
-                                val data = mapOf(
-                                    "tipo" to "receta",
-                                    "recetaId" to sel.receta.id,
-                                    "nombre" to sel.receta.titulo,
-                                    "precio" to sel.precio,
-                                    "imagen" to sel.receta.imagen_final_url,
-                                    "contacto" to contacto
-                                )
-                                db.collection("proveedores")
-                                    .document(userId)
-                                    .collection("productos")
-                                    .add(data)
-                            }
+                            try {
+                                val proveedorRef = db.collection("proveedores").document(userId)
+                                seleccionadas.forEach { sel ->
+                                    val data = mapOf(
+                                        "tipo" to "receta",
+                                        "recetaId" to sel.receta.id,
+                                        "nombre" to sel.receta.titulo,
+                                        "precio" to sel.precio,
+                                        "imagen" to sel.receta.imagen_final_url,
+                                        "contacto" to contacto
+                                    )
+                                    proveedorRef.collection("productos").add(data).await()
+                                }
 
-                            withContext(Dispatchers.Main) {
-                                mensaje = "✅ Recetas publicadas correctamente"
-                            }
+                                withContext(Dispatchers.Main) {
+                                    mensaje = "✅ Recetas publicadas correctamente"
+                                }
 
-                            delay(2000)
-
-                            withContext(Dispatchers.Main) {
-                                navController.navigate("marketplace") {
-                                    popUpTo("formulario_productos_receta") { inclusive = true }
+                                delay(1500)
+                                withContext(Dispatchers.Main) {
+                                    navController.popBackStack()
+                                    navController.navigate("marketplace")
+                                }
+                            } catch (e: Exception) {
+                                withContext(Dispatchers.Main) {
+                                    mensaje = "❌ Error al publicar: ${e.message}"
                                 }
                             }
                         }
@@ -237,17 +234,11 @@ fun FormularioProductosRecetaScreen(
                 }
             }
 
-            // 🗨️ Mensaje informativo
-            if (mensaje != null) {
+            mensaje?.let {
                 item {
-                    Text(
-                        mensaje!!,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    Text(it, color = MaterialTheme.colorScheme.primary)
                 }
             }
         }
     }
 }
-
-

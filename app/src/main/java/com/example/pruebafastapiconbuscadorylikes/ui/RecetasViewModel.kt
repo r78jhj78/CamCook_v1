@@ -292,4 +292,20 @@ class RecetasViewModel : ViewModel() {
                 println("❌ Error al buscar ingrediente: ${e.message}")
             }
     }
+    suspend fun cargarMarketplace(): List<Pair<Map<String, Any>, List<Map<String, Any>>>> {
+        val db = FirebaseFirestore.getInstance()
+        val proveedoresTemp = mutableListOf<Pair<Map<String, Any>, List<Map<String, Any>>>>()
+        val proveedoresSnap = db.collection("proveedores")
+            .whereEqualTo("estado_validacion", "aprobado")
+            .get()
+            .await()
+        for (provDoc in proveedoresSnap.documents) {
+            val provData = provDoc.data ?: continue
+            val productosSnap = provDoc.reference.collection("productos").get().await()
+            val productos = productosSnap.documents.mapNotNull { it.data }
+            proveedoresTemp.add(provData to productos)
+        }
+        return proveedoresTemp
+    }
+
 }

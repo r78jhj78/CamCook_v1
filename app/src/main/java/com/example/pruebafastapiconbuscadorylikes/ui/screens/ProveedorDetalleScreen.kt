@@ -23,7 +23,6 @@ fun ProveedorDetallePopup(
     val db = FirebaseFirestore.getInstance()
     var productos by remember { mutableStateOf<List<Producto>>(emptyList()) }
 
-    // 🔥 Escucha productos del proveedor
     LaunchedEffect(proveedor.userId) {
         db.collection("proveedores").document(proveedor.userId)
             .collection("productos")

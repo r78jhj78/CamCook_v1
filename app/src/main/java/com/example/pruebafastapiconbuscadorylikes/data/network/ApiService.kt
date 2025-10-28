@@ -15,7 +15,6 @@ data class InteraccionesResponse(
 
 interface ApiService {
 
-    // Buscar recetas
     @GET("buscar_ids")
     suspend fun buscarRecetas(
         @Query("query") query: String
@@ -33,7 +32,6 @@ interface ApiService {
         @Body request: LikeRequest
     ): LikeResponse
 
-    // Incrementar vistas
     @POST("receta/{receta_id}/view")
     suspend fun agregarVista(
         @Path("receta_id") recetaId: String,

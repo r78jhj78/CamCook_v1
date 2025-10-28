@@ -60,9 +60,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.camera.view.PreviewView
 import com.example.pruebafastapiconbuscadorylikes.auth.AuthManager
+import com.example.pruebafastapiconbuscadorylikes.data.manager.ValidacionAdminScreen
 import com.example.pruebafastapiconbuscadorylikes.data.network.ClarifaiService
 import com.example.pruebafastapiconbuscadorylikes.data.network.ViewRequest
 import com.example.pruebafastapiconbuscadorylikes.model.Receta
+import com.example.pruebafastapiconbuscadorylikes.ui.screens.DetalleProveedorScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.FormularioProductosIngredientesScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.FormularioProductosRecetaScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.FormularioProveedorScreen
@@ -78,7 +80,6 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.PreviewRecetaDialog
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.ProductosProveedorScreen
-import com.example.pruebafastapiconbuscadorylikes.ui.screens.ValidacionAdminScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -123,7 +124,7 @@ class MainActivity : ComponentActivity() {
                             navController.navigate(Routes.RECETAS)
                         },
                         onNavigateToLogin = {
-                            navController.popBackStack() // Vuelve al login
+                            navController.popBackStack()
                         }
                     )
                 }
@@ -138,19 +139,15 @@ class MainActivity : ComponentActivity() {
                             navController.navigate("detalle_receta/${receta.id}")
                         },
                         onGoToProfile = {
-                            // Navega a pantalla de perfil
                             navController.navigate("perfil")
                         },
                         onGoToFavorites = {
-                            // Navega a pantalla favoritos
                             navController.navigate("favoritos")
                         },
                         onGoToSettings = {
-                            // Navega a configuración
                             navController.navigate("configuracion")
                         },
                         onGoBackToInicio = {
-                            // Regresa a esta misma pantalla "Recetas" limpiando el backstack si quieres
                             navController.navigate(Routes.RECETAS) {
                                 popUpTo(navController.graph.startDestinationId) { inclusive = true }
                                 launchSingleTop = true
@@ -254,6 +251,7 @@ class MainActivity : ComponentActivity() {
                 }
                 composable("admin_validacion") {
                     ValidacionAdminScreen(
+                        navController = navController,
                         onBack = { navController.popBackStack() }
                     )
                 }
@@ -316,6 +314,58 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
+                composable("marketplace") {
+                    MarketplaceScreen(
+                        userId = userId,
+                        viewModel = viewModel,
+                        onBack = { navController.popBackStack() },
+                        onGoToForm = {
+                            navController.navigate("formulario_proveedor")
+                        }
+                    )
+                }
+
+                composable("formulario_proveedor") {
+                    FormularioProveedorScreen(
+                        userId = userId,
+                        viewModel = viewModel,
+                        navController = navController,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable("formulario_productos_receta") {
+                    FormularioProductosRecetaScreen(
+                        userId = userId,
+                        viewModel = viewModel,
+                        navController = navController,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable("formulario_productos_ingredientes") {
+                    FormularioProductosIngredientesScreen(
+                        userId = userId,
+                        viewModel = viewModel,
+                        navController = navController,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable("validacion_admin") {
+                    ValidacionAdminScreen(
+                        navController = navController,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable("detalle_proveedor/{uid}") { backStackEntry ->
+                    val uid = backStackEntry.arguments?.getString("uid") ?: ""
+                    DetalleProveedorScreen(
+                        uid = uid,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
             }
 
             }
@@ -335,7 +385,6 @@ fun CameraScreen(
     }
 
     if (!hasPermission) {
-        // Solicitar permiso (requiere Activity, aquí se usa un side effect)
         LaunchedEffect(Unit) {
             val activity = context as? androidx.activity.ComponentActivity
             activity?.let {
@@ -360,17 +409,14 @@ fun CameraCaptureContent(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // PreviewView para cámara
     val previewView = remember { PreviewView(context) }
 
-    // Instancia ImageCapture
     val imageCapture = remember {
         ImageCapture.Builder()
             .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
             .build()
     }
 
-    // Executor para cámara
     val cameraExecutor = remember {
         Executors.newSingleThreadExecutor()
     }
@@ -406,13 +452,11 @@ fun CameraCaptureContent(
     Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
 
-        // Botón para capturar foto
         androidx.compose.material3.Button(
             modifier = Modifier
                 .align(androidx.compose.ui.Alignment.BottomCenter)
                 .padding(16.dp),
             onClick = {
-                // Crear archivo donde guardar imagen
                 val photoFile = createImageFile(context)
 
                 val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
@@ -421,7 +465,6 @@ fun CameraCaptureContent(
                     cameraExecutor,
                     object : ImageCapture.OnImageSavedCallback {
                         override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                            // Volver al hilo principal para callback
                             android.os.Handler(context.mainLooper).post {
                                 onImageCaptured(photoFile)
                             }
