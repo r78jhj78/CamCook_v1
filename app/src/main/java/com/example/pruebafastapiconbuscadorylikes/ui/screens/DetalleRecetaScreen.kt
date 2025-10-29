@@ -43,10 +43,9 @@ fun DetalleRecetaScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    val initialIsLiked = remember(receta.id, userId) {
-        receta.liked_by.containsKey(userId)
+    var isLiked by remember(receta.id, userId, receta.liked_by) {
+        mutableStateOf(receta.liked_by.containsKey(userId))
     }
-    var isLiked by rememberSaveable(receta.id, userId) { mutableStateOf(initialIsLiked) }
 
     var likesCount by remember { mutableStateOf(receta.likes) }
 
@@ -230,20 +229,27 @@ fun DetalleRecetaScreen(
                         if (userId == "viewer") {
                             navController.navigate(Routes.LOGIN)
                         } else {
-                            scope.launch {
-                                try {
-                                    if (!isLiked) {
-                                        RetrofitClient.api.darLike(receta.id, LikeRequest(userId))
-                                        isLiked = true
-                                        likesCount += 1
-                                    } else {
-                                        RetrofitClient.api.quitarLike(receta.id, LikeRequest(userId))
-                                        isLiked = false
-                                        likesCount = (likesCount - 1).coerceAtLeast(0)
-                                    }
-                                } catch (e: Exception) {
-                                    Toast.makeText(context, "Error al dar like: ${e.message}", Toast.LENGTH_SHORT).show()
-                                }
+                            val db = FirebaseFirestore.getInstance()
+                            val recetaRef = db.collection("recetas").document(receta.id)
+
+                            if (!isLiked) {
+                                isLiked = true
+                                likesCount += 1
+                                recetaRef.update(
+                                    mapOf(
+                                        "likes" to FieldValue.increment(1),
+                                        "liked_by.$userId" to true
+                                    )
+                                )
+                            } else {
+                                isLiked = false
+                                likesCount = (likesCount - 1).coerceAtLeast(0)
+                                recetaRef.update(
+                                    mapOf(
+                                        "likes" to FieldValue.increment(-1),
+                                        "liked_by.$userId" to FieldValue.delete()
+                                    )
+                                )
                             }
                         }
                     },
@@ -256,6 +262,7 @@ fun DetalleRecetaScreen(
                         modifier = Modifier.size(40.dp)
                     )
                 }
+
 
                 Text(
                     text = "$likesCount",

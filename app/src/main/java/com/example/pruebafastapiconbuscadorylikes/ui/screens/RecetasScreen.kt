@@ -30,6 +30,8 @@ import com.example.pruebafastapiconbuscadorylikes.model.Receta
 import com.example.pruebafastapiconbuscadorylikes.navigation.Routes
 import com.example.pruebafastapiconbuscadorylikes.ui.RecetasViewModel
 import com.example.pruebafastapiconbuscadorylikes.utils.PermissionRequester
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -183,11 +185,6 @@ fun RecetasScreen(
                         RecetaCard(
                             receta = receta,
                             userId = userId,
-                            onLike = {
-                                scope.launch {
-                                    viewModel.darLike(receta.id, userId)
-                                }
-                            },
                             onClick = {
                                 viewModel.registrarVista(receta.id, userId)
                                 onRecetaClick(receta)
@@ -196,6 +193,74 @@ fun RecetasScreen(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun RecetaCard(
+    receta: Receta,
+    userId: String,
+    onClick: () -> Unit,
+    navController: NavController,
+) {
+    val context = LocalContext.current
+    var isLiked by remember { mutableStateOf(receta.liked_by.containsKey(userId)) }
+    var likesCount by remember { mutableStateOf(receta.likes) }
+
+    val db = FirebaseFirestore.getInstance()
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            .clickable { onClick() },
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+    ) {
+        Column(Modifier.padding(12.dp)) {
+            Text(receta.titulo, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(4.dp))
+            Text("❤️ $likesCount likes  👁️ ${receta.popup_clicks} vistas")
+            Spacer(Modifier.height(4.dp))
+            Text(
+                receta.descripcion.take(50) + if (receta.descripcion.length > 50) "..." else "",
+                style = MaterialTheme.typography.bodySmall
+            )
+
+            IconButton(
+                onClick = {
+                    if (userId == "viewer") {
+                        navController.navigate(Routes.LOGIN)
+                    } else {
+                        isLiked = !isLiked
+                        likesCount = if (isLiked) likesCount + 1 else (likesCount - 1).coerceAtLeast(0)
+
+                        val recetaRef = db.collection("recetas").document(receta.id)
+                        if (isLiked) {
+                            recetaRef.update(
+                                mapOf(
+                                    "likes" to FieldValue.increment(1),
+                                    "liked_by.$userId" to true
+                                )
+                            )
+                        } else {
+                            recetaRef.update(
+                                mapOf(
+                                    "likes" to FieldValue.increment(-1),
+                                    "liked_by.$userId" to FieldValue.delete()
+                                )
+                            )
+                        }
+                    }
+                },
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Icon(
+                    imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                    contentDescription = "Like",
+                    tint = if (isLiked) Color.Red else Color.Gray
+                )
             }
         }
     }
