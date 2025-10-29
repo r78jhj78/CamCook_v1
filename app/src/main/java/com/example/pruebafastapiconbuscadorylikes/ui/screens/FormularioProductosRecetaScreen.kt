@@ -192,10 +192,27 @@ fun FormularioProductosRecetaScreen(
                             return@Button
                         }
 
-                        if (seleccionadas.any { it.precio.isBlank() }) {
-                            mensaje = "⚠️ Completa los precios antes de publicar"
+                        if (seleccionadas.any { it.receta.titulo.length > 30 }) {
+                            mensaje = "⚠️ El nombre de la receta no puede tener más de 30 caracteres"
                             return@Button
                         }
+
+                        for (sel in seleccionadas) {
+                            val precio = sel.precio.toDoubleOrNull()
+                            if (precio == null) {
+                                mensaje = "⚠️ El precio de '${sel.receta.titulo}' no es válido"
+                                return@Button
+                            }
+                            if (precio <= 0) {
+                                mensaje = "⚠️ El precio debe ser mayor que 0 Bs"
+                                return@Button
+                            }
+                            if (precio > 1000) {
+                                mensaje = "⚠️ El precio de '${sel.receta.titulo}' no puede ser mayor que 1000 Bs"
+                                return@Button
+                            }
+                        }
+
 
                         scope.launch(Dispatchers.IO) {
                             try {
@@ -204,7 +221,7 @@ fun FormularioProductosRecetaScreen(
                                     val data = mapOf(
                                         "tipo" to "receta",
                                         "recetaId" to sel.receta.id,
-                                        "nombre" to sel.receta.titulo,
+                                        "nombre" to sel.receta.titulo.take(30),
                                         "precio" to sel.precio,
                                         "imagen" to sel.receta.imagen_final_url,
                                         "contacto" to contacto

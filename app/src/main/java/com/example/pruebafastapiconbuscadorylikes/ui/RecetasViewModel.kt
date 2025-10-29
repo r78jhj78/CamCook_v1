@@ -86,38 +86,7 @@ class RecetasViewModel : ViewModel() {
             }
         }
     }
-    /*fun darLike(recetaId: String, uid: String) {
-        viewModelScope.launch {
-            try {
-                bloqueandoSnapshot = true
 
-                _recetas.value = _recetas.value.map { receta ->
-                    if (receta.id == recetaId) {
-                        val yaDioLike = receta.liked_by.containsKey(uid)
-                        val nuevosLikes = if (yaDioLike) receta.likes - 1 else receta.likes + 1
-                        val nuevoMapa = receta.liked_by.toMutableMap().apply {
-                            if (yaDioLike) remove(uid) else put(uid, true)
-                        }
-                        receta.copy(likes = nuevosLikes, liked_by = nuevoMapa)
-                    } else receta
-                }
-
-                val receta = _recetas.value.find { it.id == recetaId }
-                val yaDioLike = receta?.liked_by?.containsKey(uid) == true
-
-                if (yaDioLike) {
-                    RetrofitClient.api.darLike(recetaId, LikeRequest(uid))
-                } else {
-                    RetrofitClient.api.quitarLike(recetaId, LikeRequest(uid))
-                }
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                bloqueandoSnapshot = false
-            }
-        }
-    }*/
     fun darLike(recetaId: String, uid: String) {
         viewModelScope.launch {
             try {
@@ -149,7 +118,6 @@ class RecetasViewModel : ViewModel() {
                 }
 
                 Log.d("Like", "❤️ Like actualizado correctamente (${if (yaDioLikeAntes) "quitado" else "añadido"})")
-
             } catch (e: Exception) {
                 Log.e("Like", "❌ Error al dar like: ${e.message}")
             } finally {
@@ -158,19 +126,20 @@ class RecetasViewModel : ViewModel() {
         }
     }
 
-
     fun registrarVista(recetaId: String, uid: String) {
         viewModelScope.launch {
             try {
                 RetrofitClient.api.agregarVista(recetaId, ViewRequest(uid))
-                Log.d("FastAPI", "✅ Vista registrada en backend para $recetaId")
 
-                val current = _vistasPorReceta.value.toMutableMap()
-                current[recetaId] = (current[recetaId] ?: 0) + 1
-                _vistasPorReceta.value = current
+                val current = _recetas.value.map { receta ->
+                    if (receta.id == recetaId) receta.copy(popup_clicks = receta.popup_clicks + 1)
+                    else receta
+                }
+                _recetas.value = current
 
+                Log.d("Vista", "Vista registrada en UI y backend para $recetaId")
             } catch (e: Exception) {
-                Log.e("FastAPI", "❌ Error al registrar vista: ${e.message}")
+                Log.e("Vista", " Error al registrar vista: ${e.message}")
             }
         }
     }

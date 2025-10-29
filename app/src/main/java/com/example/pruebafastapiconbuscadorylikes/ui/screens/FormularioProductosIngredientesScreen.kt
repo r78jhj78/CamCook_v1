@@ -15,6 +15,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import com.example.pruebafastapiconbuscadorylikes.model.Ingrediente
 import com.example.pruebafastapiconbuscadorylikes.ui.RecetasViewModel
+import com.google.android.gms.common.util.CollectionUtils.mapOf
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -250,9 +251,35 @@ fun FormularioProductosIngredientesScreen(
                             return@Button
                         }
 
-                        if (seleccionados.any { it.precio.isBlank() || it.cantidad.isBlank() || it.unidad.isBlank() }) {
-                            mensaje = "⚠️ Completa todos los campos antes de publicar"
-                            return@Button
+                        for (sel in seleccionados) {
+                            val nombre = sel.ingrediente.nombre?.trim() ?: ""
+                            val precio = sel.precio.toDoubleOrNull()
+                            val cantidad = sel.cantidad.toDoubleOrNull()
+
+                            if (nombre.isBlank()) {
+                                mensaje = "⚠️ El nombre del ingrediente no puede estar vacío"
+                                return@Button
+                            }
+                            if (nombre.length > 30) {
+                                mensaje = "⚠️ El nombre del ingrediente '$nombre' no puede tener más de 30 caracteres"
+                                return@Button
+                            }
+                            if (precio == null || precio <= 0) {
+                                mensaje = "⚠️ El precio de '$nombre' debe ser un número mayor que 0"
+                                return@Button
+                            }
+                            if (precio > 1000) {
+                                mensaje = "⚠️ El precio de '$nombre' no puede ser mayor que 1000 Bs"
+                                return@Button
+                            }
+                            if (cantidad == null || cantidad <= 0) {
+                                mensaje = "⚠️ La cantidad de '$nombre' debe ser mayor que 0"
+                                return@Button
+                            }
+                            if (sel.unidad.isBlank()) {
+                                mensaje = "⚠️ Selecciona una unidad para '$nombre'"
+                                return@Button
+                            }
                         }
 
                         scope.launch(Dispatchers.IO) {
@@ -261,7 +288,7 @@ fun FormularioProductosIngredientesScreen(
                                 seleccionados.forEach { sel ->
                                     val data = mapOf(
                                         "tipo" to "ingrediente",
-                                        "nombre" to (sel.ingrediente.nombre ?: "").trim().replace(Regex("\\s+"), " "),
+                                        "nombre" to sel.ingrediente.nombre?.take(30) ?: "",
                                         "cantidad" to sel.cantidad,
                                         "unidad" to sel.unidad,
                                         "precio" to "${sel.precio} Bs",

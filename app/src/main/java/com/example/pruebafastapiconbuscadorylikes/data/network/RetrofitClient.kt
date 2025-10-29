@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    private const val BASE_URL = "https://fastapireconocimiento-production.up.railway.app"
+    private const val BASE_URL = "https://fastapireconocimiento-2.onrender.com/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
@@ -28,5 +28,4 @@ object RetrofitClient {
             .build()
             .create(ApiService::class.java)
     }
-
 }

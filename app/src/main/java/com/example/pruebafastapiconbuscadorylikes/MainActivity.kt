@@ -168,6 +168,7 @@ class MainActivity : ComponentActivity() {
                         DetalleRecetaScreen(
                             receta = receta,
                             userId = userId,
+                            navController = navController,
                             onBack = { navController.popBackStack() },
                             onLike = { viewModel.darLike(receta.id, userId) }
                         )
@@ -207,6 +208,7 @@ class MainActivity : ComponentActivity() {
                         DetalleRecetaScreen(
                             receta = it,
                             userId = userId,
+                            navController = navController,
                             onBack = { navController.popBackStack() },
                             onLike = { viewModel.darLike(it.id, userId) }
                         )
