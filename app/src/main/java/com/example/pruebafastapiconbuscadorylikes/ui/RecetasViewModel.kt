@@ -261,6 +261,7 @@ class RecetasViewModel : ViewModel() {
                 println("❌ Error al buscar ingrediente: ${e.message}")
             }
     }
+<<<<<<< HEAD
     suspend fun cargarMarketplace(): List<Pair<Map<String, Any>, List<Map<String, Any>>>> {
         val db = FirebaseFirestore.getInstance()
         val proveedoresTemp = mutableListOf<Pair<Map<String, Any>, List<Map<String, Any>>>>()
@@ -277,4 +278,6 @@ class RecetasViewModel : ViewModel() {
         return proveedoresTemp
     }
 
+=======
+>>>>>>> c5439917de959dea419d1924057c9d669d31df3c
 }

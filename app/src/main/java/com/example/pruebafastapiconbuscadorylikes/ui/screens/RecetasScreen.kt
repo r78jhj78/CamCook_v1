@@ -1,6 +1,13 @@
 package com.example.pruebafastapiconbuscadorylikes.ui.screens
 
 import android.widget.Toast
+<<<<<<< HEAD
+=======
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+>>>>>>> c5439917de959dea419d1924057c9d669d31df3c
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,9 +33,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+<<<<<<< HEAD
 import com.example.pruebafastapiconbuscadorylikes.model.Receta
 import com.example.pruebafastapiconbuscadorylikes.navigation.Routes
 import com.example.pruebafastapiconbuscadorylikes.ui.RecetasViewModel
+=======
+import androidx.navigation.compose.rememberNavController
+import com.example.pruebafastapiconbuscadorylikes.navigation.Routes
+>>>>>>> c5439917de959dea419d1924057c9d669d31df3c
 import com.example.pruebafastapiconbuscadorylikes.utils.PermissionRequester
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -76,11 +88,37 @@ fun RecetasScreen(
                     }
                 },
                 actions = {
+<<<<<<< HEAD
+=======
+                    val context = LocalContext.current
+
+>>>>>>> c5439917de959dea419d1924057c9d669d31df3c
                     IconButton(onClick = {
                         if (userId == "viewer") {
                             navController.navigate(Routes.LOGIN)
                         } else {
                             onGoToProfile()
+<<<<<<< HEAD
+=======
+                        }
+                    }) {
+                        Icon(imageVector = Icons.Default.Person, contentDescription = "Perfil")
+                    }
+
+                    IconButton(
+                        onClick = {
+                            if (userId == "viewer") {
+                                Toast.makeText(context, "Inicia sesión para acceder a la tienda", Toast.LENGTH_SHORT).show()
+                            } else {
+                                navController.navigate("marketplace")
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Default.Store, contentDescription = "Tienda")
+                            Text("Tienda", style = MaterialTheme.typography.labelSmall)
+>>>>>>> c5439917de959dea419d1924057c9d669d31df3c
                         }
                     }) {
                         Icon(imageVector = Icons.Default.Person, contentDescription = "Perfil")
@@ -103,7 +141,7 @@ fun RecetasScreen(
             )
         },
         bottomBar = {
-            BottomAppBar(
+            /*BottomAppBar(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
@@ -148,6 +186,53 @@ fun RecetasScreen(
                         Text("Favoritos", style = MaterialTheme.typography.labelSmall)
                     }
                 }
+            }*/
+            BottomAppBar(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ) {
+                IconButton(onClick = { navController.navigate("recetas") }, modifier = Modifier.weight(1f)) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.List, contentDescription = "Recetas")
+                        Text("Recetas", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+
+                val context = LocalContext.current
+                var shouldRequestPermission by remember { mutableStateOf(false) }
+
+                IconButton(
+                    onClick = {
+                        if (userId == "viewer") {
+                            navController.navigate("login")
+                        } else {
+                            shouldRequestPermission = true
+                        }
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.CameraAlt, contentDescription = "Cámara")
+                        Text("Cámara", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+
+                if (shouldRequestPermission) {
+                    PermissionRequester(
+                        permission = android.Manifest.permission.CAMERA,
+                        onPermissionGranted = {
+                            shouldRequestPermission = false
+                            navController.navigate("camera")
+                        }
+                    )
+                }
+
+                IconButton(onClick = { navController.navigate("ingredientes") }, modifier = Modifier.weight(1f)) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.RestaurantMenu, contentDescription = "Ingredientes")
+                        Text("Ingredientes", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
             }
         }
     ) { padding ->
@@ -189,7 +274,11 @@ fun RecetasScreen(
                                 viewModel.registrarVista(receta.id, userId)
                                 onRecetaClick(receta)
                             },
+<<<<<<< HEAD
                             navController = navController
+=======
+                            navController = navController,
+>>>>>>> c5439917de959dea419d1924057c9d669d31df3c
                         )
                     }
                 }
@@ -202,6 +291,7 @@ fun RecetasScreen(
 fun RecetaCard(
     receta: Receta,
     userId: String,
+<<<<<<< HEAD
     onClick: () -> Unit,
     navController: NavController,
 ) {
@@ -210,6 +300,20 @@ fun RecetaCard(
     var likesCount by remember { mutableStateOf(receta.likes) }
 
     val db = FirebaseFirestore.getInstance()
+=======
+    onLike: () -> Unit,
+    onClick: () -> Unit,
+    navController: NavController,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val dioLike = receta.liked_by.contains(userId)
+    val ingredientesEstado = remember {
+        mutableStateListOf<Boolean>().apply {
+            repeat(receta.ingredientes.size) { add(false) }
+        }
+    }
+    val context = LocalContext.current
+>>>>>>> c5439917de959dea419d1924057c9d669d31df3c
 
     Card(
         modifier = Modifier
@@ -236,6 +340,7 @@ fun RecetaCard(
                         isLiked = !isLiked
                         likesCount = if (isLiked) likesCount + 1 else (likesCount - 1).coerceAtLeast(0)
 
+<<<<<<< HEAD
                         val recetaRef = db.collection("recetas").document(receta.id)
                         if (isLiked) {
                             recetaRef.update(
@@ -256,6 +361,23 @@ fun RecetaCard(
                 },
                 modifier = Modifier.align(Alignment.End)
             ) {
+=======
+            Text("❤️ ${receta.likes} likes  👁️ ${receta.popup_clicks} vistas")
+
+            if (receta.descripcion.length > 50) {
+                Text(receta.descripcion.take(50) + "...", style = MaterialTheme.typography.bodySmall)
+            } else {
+                Text(receta.descripcion, style = MaterialTheme.typography.bodySmall)
+            }
+
+            IconButton(onClick = {
+                if (userId == "viewer") {
+                    navController.navigate(Routes.LOGIN)
+                } else {
+                    onLike()
+                }
+            }, modifier = Modifier.align(Alignment.End)) {
+>>>>>>> c5439917de959dea419d1924057c9d669d31df3c
                 Icon(
                     imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                     contentDescription = "Like",

@@ -60,7 +60,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.camera.view.PreviewView
 import com.example.pruebafastapiconbuscadorylikes.auth.AuthManager
+<<<<<<< HEAD
 import com.example.pruebafastapiconbuscadorylikes.data.manager.ValidacionAdminScreen
+=======
+>>>>>>> c5439917de959dea419d1924057c9d669d31df3c
 import com.example.pruebafastapiconbuscadorylikes.data.network.ClarifaiService
 import com.example.pruebafastapiconbuscadorylikes.data.network.ViewRequest
 import com.example.pruebafastapiconbuscadorylikes.model.Receta
@@ -290,6 +293,7 @@ class MainActivity : ComponentActivity() {
                         onGoBackToInicio = { navController.navigate("recetas") }
                     )
                 }
+<<<<<<< HEAD
                 composable("formulario_proveedor") {
                     FormularioProveedorScreen(
                         userId = userId,
@@ -368,6 +372,9 @@ class MainActivity : ComponentActivity() {
                         onBack = { navController.popBackStack() }
                     )
                 }
+=======
+
+>>>>>>> c5439917de959dea419d1924057c9d669d31df3c
             }
 
             }
