@@ -75,29 +75,8 @@ fun PerfilScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
                     Divider()
-/*
-                    if (user.vistas.isNotEmpty()) {
-                        Text("🍽 Recetas vistas (Firestore):")
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        user.vistas.forEach { (recetaId, cantidad) ->
-                            val titulo = titulosRecetasVistas[recetaId] ?: "Receta $recetaId"
-                            Text("• $titulo ($cantidad vista${if (cantidad != 1) "s" else ""})")
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }*/
-
 
                     interacciones?.let { data ->
-                        /*if (data.vistas.isNotEmpty()) {
-                            Text("👀 Recetas vistas:")
-                            data.vistas.forEach { receta ->
-                                Text("• ${receta.titulo}")
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }*/
-
                         if (data.likes.isNotEmpty()) {
                             Text("❤️ Recetas con like:")
                             data.likes.forEach { receta ->

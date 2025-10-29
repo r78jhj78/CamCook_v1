@@ -33,10 +33,6 @@ fun MarketplaceScreen(
     val db = FirebaseFirestore.getInstance()
     val scope = rememberCoroutineScope()
 
-    /**
-     * 🔄 LaunchedEffect: carga inicial y cada vez que el usuario vuelve al marketplace.
-     * Esto evita que Compose se quede “pensando” cuando regresas de un formulario.
-     */
     LaunchedEffect(userId) {
         cargando = true
         val proveedoresTemp = mutableListOf<Pair<Map<String, Any>, List<Map<String, Any>>>>()

@@ -8,7 +8,6 @@ object ValidacionManager {
 
     private val db = FirebaseFirestore.getInstance()
 
-    /** Registrar un proveedor en estado pendiente con todos sus datos */
     suspend fun registrarProveedorPendiente(
         userId: String,
         nombre: String,
@@ -38,7 +37,6 @@ object ValidacionManager {
         }
     }
 
-    /** Agregar un producto a la subcolección de productos del proveedor */
     suspend fun agregarProductoProveedor(
         userId: String,
         tipo: String,
@@ -69,7 +67,6 @@ object ValidacionManager {
         }
     }
 
-    /** Actualizar el estado de validación de un proveedor (pendiente, aprobado, rechazado) */
     suspend fun actualizarEstadoProveedor(
         userId: String,
         nuevoEstado: String,
@@ -91,7 +88,6 @@ object ValidacionManager {
         }
     }
 
-    /** Obtener todos los proveedores pendientes */
     suspend fun obtenerProveedoresPendientes(): List<Map<String, Any>> {
         return try {
             val snap = db.collection("proveedores")
@@ -105,7 +101,6 @@ object ValidacionManager {
         }
     }
 
-    /** Obtener todos los proveedores aprobados */
     suspend fun obtenerProveedoresAprobados(): List<Map<String, Any>> {
         return try {
             val snap = db.collection("proveedores")
@@ -119,7 +114,6 @@ object ValidacionManager {
         }
     }
 
-    /** Funciones auxiliares para cambiar estado (solo llaman a actualizarEstadoProveedor) */
     suspend fun aprobarProveedor(userId: String): Boolean {
         return actualizarEstadoProveedor(userId, "aprobado")
     }
