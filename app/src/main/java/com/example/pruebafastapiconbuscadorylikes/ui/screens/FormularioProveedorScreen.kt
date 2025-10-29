@@ -111,9 +111,20 @@ fun FormularioProveedorScreen(
             if (!formularioProveedorLleno) {
                 OutlinedTextField(
                     value = nombre,
-                    onValueChange = { nombre = it },
-                    label = { Text("Nombre del negocio") },
-                    modifier = Modifier.fillMaxWidth()
+                    onValueChange = { input ->
+                        val cleaned = input
+                            .replace(Regex("\\s{2,}"), " ")
+                            .trimStart()
+                            .take(31)
+
+                        nombre = cleaned
+                    },
+                    label = { Text("Nombre del negocio (máx. 31 caracteres)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    supportingText = {
+                        Text("${nombre.length}/31")
+                    }
                 )
 
                 OutlinedTextField(

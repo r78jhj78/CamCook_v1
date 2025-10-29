@@ -159,14 +159,20 @@ fun FormularioProductosRecetaScreen(
                                 onValueChange = { nuevo ->
                                     val limpio = nuevo.trim().replace(",", ".")
                                     if (limpio.isEmpty() || limpio.matches(Regex("^\\d*\\.?\\d*\$"))) {
-                                        seleccionadas = seleccionadas.toMutableList().also {
-                                            it[index] = it[index].copy(precio = limpio)
+                                        val valor = limpio.toDoubleOrNull()
+                                        if (valor == null || valor <= 10000) {
+                                            seleccionadas = seleccionadas.toMutableList().also {
+                                                it[index] = it[index].copy(precio = limpio)
+                                            }
                                         }
                                     }
                                 },
                                 label = { Text("💰 Precio (Bs)") },
                                 placeholder = { Text("Ej: 25.00") },
-                                singleLine = true
+                                singleLine = true,
+                                supportingText = {
+                                    Text("Máx: 10000 Bs")
+                                }
                             )
                         }
                     }

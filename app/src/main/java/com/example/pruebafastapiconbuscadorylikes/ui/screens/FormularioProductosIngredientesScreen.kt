@@ -169,15 +169,19 @@ fun FormularioProductosIngredientesScreen(
                                 onValueChange = { nuevo ->
                                     val limpio = nuevo.trim().replace(",", ".")
                                     if (limpio.isEmpty() || limpio.matches(Regex("^\\d*\\.?\\d*\$"))) {
-                                        seleccionados = seleccionados.toMutableList().also {
-                                            it[index] = it[index].copy(cantidad = limpio)
+                                        val valor = limpio.toDoubleOrNull()
+                                        if (valor == null || valor <= 10000) {
+                                            seleccionados = seleccionados.toMutableList().also {
+                                                it[index] = it[index].copy(cantidad = limpio)
+                                            }
                                         }
                                     }
                                 },
                                 label = { Text("Cantidad") },
                                 placeholder = { Text("Ej: 500") },
                                 singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                supportingText = { Text("Máx: 10000") }
                             )
 
                             ExposedDropdownMenuBox(
@@ -217,16 +221,21 @@ fun FormularioProductosIngredientesScreen(
                                 onValueChange = { nuevo ->
                                     val limpio = nuevo.trim().replace(",", ".")
                                     if (limpio.isEmpty() || limpio.matches(Regex("^\\d*\\.?\\d*\$"))) {
-                                        seleccionados = seleccionados.toMutableList().also {
-                                            it[index] = it[index].copy(precio = limpio)
+                                        val valor = limpio.toDoubleOrNull()
+                                        if (valor == null || valor <= 10000) {
+                                            seleccionados = seleccionados.toMutableList().also {
+                                                it[index] = it[index].copy(precio = limpio)
+                                            }
                                         }
                                     }
                                 },
                                 label = { Text("💰 Precio (Bs)") },
                                 placeholder = { Text("Ej: 15.50") },
                                 singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                supportingText = { Text("Máx: 10000 Bs") }
                             )
+
                         }
                     }
                 }
