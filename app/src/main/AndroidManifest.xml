@@ -10,15 +10,15 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:icon="@mipmap/cam_cook_logo"
+        android:label="CamCook"
+        android:roundIcon="@mipmap/cam_cook_logo"
         android:supportsRtl="true"
         android:theme="@style/Theme.PruebaFastApiConBuscadorYLikes">
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
+            android:label="CamCook"
             android:theme="@style/Theme.PruebaFastApiConBuscadorYLikes">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

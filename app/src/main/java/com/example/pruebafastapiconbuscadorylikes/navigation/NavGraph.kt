@@ -9,7 +9,7 @@ import com.example.pruebafastapiconbuscadorylikes.auth.RegisterScreen
 import com.example.pruebafastapiconbuscadorylikes.model.Receta
 import com.example.pruebafastapiconbuscadorylikes.ui.RecetasViewModel
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.RecetasScreen
-import com.example.pruebafastapiconbuscadorylikes.ui.screens.DetalleRecetaScreen
+//import com.example.pruebafastapiconbuscadorylikes.ui.screens.DetalleRecetaScreen
 import androidx.navigation.NavType
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
@@ -19,6 +19,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 
 object Routes {
+    const val SPLASH = "splash"
     const val LOGIN = "login"
     const val REGISTER = "register"
     const val RECETAS = "recetas"

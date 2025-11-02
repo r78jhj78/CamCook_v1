@@ -1,56 +1,77 @@
 package com.example.pruebafastapiconbuscadorylikes.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.AdminPanelSettings
+import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.pruebafastapiconbuscadorylikes.ui.RecetasViewModel
 import com.google.firebase.auth.FirebaseAuth
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerfilScreen(
     userId: String,
     viewModel: RecetasViewModel,
-    navController: androidx.navigation.NavController,
+    navController: NavController,
     onBack: () -> Unit
 ) {
+    val camcookColor = Color(0xFFFAA935)
+    val accentColor = Color(0xFF8C7B6B)
+    val backgroundColor = Color(0xFFF6F6F6)
+    val beigeColor = Color(0xFFE5D9C5)
+
     if (userId == "viewer") {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Debes iniciar sesión para ver tu perfil.")
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(backgroundColor),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("Debes iniciar sesión para ver tu perfil.", color = accentColor)
         }
         return
     }
+
     val userData by viewModel.getUserData(userId).collectAsState(initial = null)
-
-    val vistasPorReceta by viewModel.vistasPorReceta.collectAsState()
-    val titulosRecetasVistas by viewModel.titulosVistas.collectAsState()
     val interacciones by viewModel.interacciones.collectAsState()
-
-    var isLoading by remember { mutableStateOf(false) }
-    var message by remember { mutableStateOf<String?>(null) }
     val currentUser = FirebaseAuth.getInstance().currentUser
     val userEmail = currentUser?.email ?: ""
+    var showDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
         viewModel.escucharVistasConTitulos(userId)
         viewModel.cargarInteracciones(userId)
     }
 
     Scaffold(
+        containerColor = backgroundColor,
         topBar = {
             TopAppBar(
-                title = { Text("👤 Perfil") },
+                title = {
+                    Text("👤 Perfil", color = Color.White, fontWeight = FontWeight.Bold)
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = camcookColor)
             )
         }
     ) { padding ->
@@ -61,45 +82,93 @@ fun PerfilScreen(
                 .fillMaxSize()
         ) {
             userData?.let { user ->
-                Column {
-                    Text("Nombre: ${user.nombre}", fontWeight = FontWeight.Bold)
-                    Text("Email: ${user.email}")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Roles actuales: ${user.roles.joinToString(", ")}")
-                    if (user.vistas.containsKey("estado_validacion")) {
-                        val estado = user.vistas["estado_validacion"]
-                        Text("Estado de validación: $estado")
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Imagen de perfil
+                    Box(
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape)
+                            .background(camcookColor.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Imagen de perfil",
+                            tint = accentColor,
+                            modifier = Modifier.size(64.dp)
+                        )
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
 
+                    // Información del usuario
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(user.nombre, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = accentColor)
+                            Text(user.email, fontSize = 14.sp, color = accentColor)
+                            Text("Roles: ${user.roles.joinToString(", ")}", fontSize = 14.sp, color = accentColor)
 
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Divider()
-
-                    interacciones?.let { data ->
-                        if (data.likes.isNotEmpty()) {
-                            Text("❤️ Recetas con like:")
-                            data.likes.forEach { receta ->
-                                Text("• ${receta.titulo} ")
+                            user.vistas["estado_validacion"]?.let {
+                                Text("Estado de validación: $it", fontSize = 14.sp, color = accentColor)
                             }
-                            Spacer(modifier = Modifier.height(16.dp))
                         }
-                        Divider()
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    // Recetas con like
+                    interacciones?.likes?.takeIf { it.isNotEmpty() }?.let { likes ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(4.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text("❤️ Recetas con like:", fontWeight = FontWeight.Bold, color = camcookColor)
+                                likes.forEach { receta ->
+                                    Text("• ${receta.titulo}", color = accentColor)
+                                }
+                            }
+                        }
+                    }
+
+                    // Panel Admin
                     if (userEmail == "equipodecamcook@gmail.com") {
-                        Spacer(modifier = Modifier.height(16.dp))
                         Button(
                             onClick = { navController.navigate("admin_validacion") },
+                            colors = ButtonDefaults.buttonColors(containerColor = camcookColor),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("👑 Panel Admin (Validar Solicitudes)")
+                            Icon(Icons.Default.AdminPanelSettings, contentDescription = null, tint = Color.White)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Panel Admin", color = Color.White)
                         }
                     }
 
-                    var showDialog by remember { mutableStateOf(false) }
+                    // Cerrar sesión
+                    Button(
+                        onClick = { showDialog = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Logout, contentDescription = null, tint = Color.White)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Cerrar sesión", color = Color.White)
+                    }
 
+                    // Diálogo de confirmación
                     if (showDialog) {
                         AlertDialog(
                             onDismissRequest = { showDialog = false },
@@ -111,70 +180,23 @@ fun PerfilScreen(
                                         popUpTo("marketplace") { inclusive = true }
                                     }
                                 }) {
-                                    Text("Sí, cerrar sesión")
+                                    Text("Sí, cerrar sesión", color = camcookColor)
                                 }
                             },
                             dismissButton = {
                                 TextButton(onClick = { showDialog = false }) {
-                                    Text("Cancelar")
+                                    Text("Cancelar", color = accentColor)
                                 }
                             },
-                            title = { Text("¿Cerrar sesión?") },
-                            text = { Text("Tu sesión se cerrará y deberás iniciar nuevamente.") }
+                            title = { Text("¿Cerrar sesión?", color = accentColor) },
+                            text = { Text("Tu sesión se cerrará y deberás iniciar nuevamente.", color = accentColor) },
+                            containerColor = beigeColor
                         )
                     }
-
-                    Button(
-                        onClick = { showDialog = true },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("🚪 Cerrar sesión", color = MaterialTheme.colorScheme.onErrorContainer)
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-
-                    if (isLoading) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        CircularProgressIndicator()
-                    }
-
-                    message?.let {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(text = it, color = Color.Green)
-                    }
                 }
-            } ?: run {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            }
+            } ?: CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = camcookColor)
         }
     }
 }
 
-@Composable
-fun RoleToggleButton(
-    role: String,
-    hasRole: Boolean,
-    onAdd: () -> Unit,
-    onRemove: () -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(vertical = 8.dp)
-    ) {
-        Text("Rol: $role", modifier = Modifier.weight(1f))
 
-        if (hasRole) {
-            Button(onClick = onRemove) {
-                Text("Quitar")
-            }
-        } else {
-            Button(onClick = onAdd) {
-                Text("Agregar")
-            }
-        }
-    }
-}

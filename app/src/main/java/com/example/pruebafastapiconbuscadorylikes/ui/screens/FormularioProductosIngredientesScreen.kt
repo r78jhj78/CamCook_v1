@@ -15,7 +15,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import com.example.pruebafastapiconbuscadorylikes.model.Ingrediente
 import com.example.pruebafastapiconbuscadorylikes.ui.RecetasViewModel
-import com.google.android.gms.common.util.CollectionUtils.mapOf
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -49,11 +48,11 @@ fun FormularioProductosIngredientesScreen(
     val scope = rememberCoroutineScope()
     val unidades = listOf("gramos", "kilogramos", "litros", "mililitros", "unidad")
 
+    // 🔹 Carga inicial: ingredientes + contacto
     LaunchedEffect(recetas, userId) {
         try {
             val allIngredientes = recetas.flatMap { it.ingredientes ?: emptyList() }
             ingredientes = allIngredientes.distinctBy { it.nombre }
-
             val doc = db.collection("proveedores").document(userId).get().await()
             contacto = doc.getString("telefono") ?: ""
         } catch (e: Exception) {
@@ -101,6 +100,7 @@ fun FormularioProductosIngredientesScreen(
                 )
             }
 
+            // 🔹 Listado de ingredientes
             items(ingredientes.size) { i ->
                 val ing = ingredientes[i]
                 val seleccionado = seleccionados.any { it.ingrediente.nombre == ing.nombre }
@@ -141,6 +141,7 @@ fun FormularioProductosIngredientesScreen(
                 }
             }
 
+            // 🔹 Campos para cada ingrediente seleccionado
             if (seleccionados.isNotEmpty()) {
                 item {
                     Divider()
@@ -235,7 +236,6 @@ fun FormularioProductosIngredientesScreen(
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 supportingText = { Text("Máx: 10000 Bs") }
                             )
-
                         }
                     }
                 }
@@ -251,6 +251,7 @@ fun FormularioProductosIngredientesScreen(
                 }
             }
 
+            // 🔹 Botón para guardar ingredientes
             item {
                 Spacer(Modifier.height(12.dp))
                 Button(
@@ -260,6 +261,7 @@ fun FormularioProductosIngredientesScreen(
                             return@Button
                         }
 
+                        // Validación previa
                         for (sel in seleccionados) {
                             val nombre = sel.ingrediente.nombre?.trim() ?: ""
                             val precio = sel.precio.toDoubleOrNull()
@@ -270,11 +272,11 @@ fun FormularioProductosIngredientesScreen(
                                 return@Button
                             }
                             if (nombre.length > 30) {
-                                mensaje = "⚠️ El nombre del ingrediente '$nombre' no puede tener más de 30 caracteres"
+                                mensaje = "⚠️ El nombre de '$nombre' no puede tener más de 30 caracteres"
                                 return@Button
                             }
                             if (precio == null || precio <= 0) {
-                                mensaje = "⚠️ El precio de '$nombre' debe ser un número mayor que 0"
+                                mensaje = "⚠️ El precio de '$nombre' debe ser mayor que 0"
                                 return@Button
                             }
                             if (precio > 1000) {
@@ -291,20 +293,42 @@ fun FormularioProductosIngredientesScreen(
                             }
                         }
 
+                        // 🔹 Guardar en Firestore
                         scope.launch(Dispatchers.IO) {
                             try {
+                                val proveedorDoc = db.collection("proveedores").document(userId).get().await()
+                                if (!proveedorDoc.exists()) {
+                                    withContext(Dispatchers.Main) {
+                                        mensaje = "⚠️ Primero debes registrarte como proveedor antes de publicar ingredientes"
+                                    }
+                                    return@launch
+                                }
+
+                                val estado = proveedorDoc.getString("estado_validacion") ?: "pendiente"
+                                if (estado != "aprobado") {
+                                    withContext(Dispatchers.Main) {
+                                        mensaje = "⏳ Tu cuenta de proveedor aún no está aprobada"
+                                    }
+                                    return@launch
+                                }
+
                                 val proveedorRef = db.collection("proveedores").document(userId)
                                 seleccionados.forEach { sel ->
-                                    val data = mapOf(
+                                    val cantidad = sel.cantidad.replace(",", ".").toDoubleOrNull() ?: 0.0
+                                    val precioBs = sel.precio.replace(",", ".").toDoubleOrNull() ?: 0.0
+
+                                    val data = hashMapOf<String, Any>(
                                         "tipo" to "ingrediente",
-                                        "nombre" to sel.ingrediente.nombre?.take(30) ?: "",
-                                        "cantidad" to sel.cantidad,
+                                        "nombre" to (sel.ingrediente.nombre?.take(30) ?: ""),
+                                        "cantidad" to cantidad, // Double
                                         "unidad" to sel.unidad,
-                                        "precio" to "${sel.precio} Bs",
+                                        "precio" to precioBs,   // Double
                                         "contacto" to contacto
                                     )
+
                                     proveedorRef.collection("productos").add(data).await()
                                 }
+
 
                                 withContext(Dispatchers.Main) {
                                     mensaje = "✅ Ingredientes publicados correctamente"
@@ -315,9 +339,10 @@ fun FormularioProductosIngredientesScreen(
                                     navController.popBackStack()
                                     navController.navigate("marketplace")
                                 }
+
                             } catch (e: Exception) {
                                 withContext(Dispatchers.Main) {
-                                    mensaje = "❌ Error al publicar: ${e.message}"
+                                    mensaje = "❌ Error al publicar: ${e.message ?: "verifica conexión"}"
                                 }
                             }
                         }
@@ -328,6 +353,7 @@ fun FormularioProductosIngredientesScreen(
                 }
             }
 
+            // 🔹 Mensaje final
             mensaje?.let {
                 item {
                     Text(it, color = MaterialTheme.colorScheme.primary)

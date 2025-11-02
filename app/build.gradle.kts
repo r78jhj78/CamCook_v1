@@ -112,4 +112,15 @@ dependencies {
 
     //CORREO
     implementation("com.google.android.gms:play-services-auth:20.7.0")
+    implementation("androidx.compose.animation:animation:1.5.0")
+    implementation("androidx.compose.material3:material3:1.2.0")
+
+    // Compose BOM (recomendado)
+    implementation(platform("androidx.compose:compose-bom:2023.10.01"))
+    implementation("androidx.compose.material3:material3:1.2.0-alpha03")
+// o la última versión estable
+    implementation("androidx.activity:activity-compose:1.7.2")
+
+
+
 }

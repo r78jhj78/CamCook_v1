@@ -6,8 +6,6 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pruebafastapiconbuscadorylikes.ui.RecetasViewModel
@@ -26,19 +24,12 @@ import com.example.pruebafastapiconbuscadorylikes.auth.LoginScreen
 import com.example.pruebafastapiconbuscadorylikes.auth.RegisterScreen
 import com.example.pruebafastapiconbuscadorylikes.data.network.RetrofitClient
 import com.example.pruebafastapiconbuscadorylikes.navigation.Routes
-import com.example.pruebafastapiconbuscadorylikes.ui.screens.CameraScreen
-import com.example.pruebafastapiconbuscadorylikes.ui.screens.DetalleRecetaScreen
 import com.google.gson.Gson
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.json.JSONObject
 
 
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -47,26 +38,15 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.camera.view.PreviewView
 import com.example.pruebafastapiconbuscadorylikes.auth.AuthManager
-<<<<<<< HEAD
 import com.example.pruebafastapiconbuscadorylikes.data.manager.ValidacionAdminScreen
-=======
->>>>>>> c5439917de959dea419d1924057c9d669d31df3c
-import com.example.pruebafastapiconbuscadorylikes.data.network.ClarifaiService
 import com.example.pruebafastapiconbuscadorylikes.data.network.ViewRequest
 import com.example.pruebafastapiconbuscadorylikes.model.Receta
+import com.example.pruebafastapiconbuscadorylikes.ui.screens.CameraScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.DetalleProveedorScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.FormularioProductosIngredientesScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.FormularioProductosRecetaScreen
@@ -74,15 +54,13 @@ import com.example.pruebafastapiconbuscadorylikes.ui.screens.FormularioProveedor
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.IngredientesScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.MarketplaceScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.PerfilScreen
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.first
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
-import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import com.example.pruebafastapiconbuscadorylikes.ui.screens.PreviewRecetaDialog
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.ProductosProveedorScreen
+import com.example.pruebafastapiconbuscadorylikes.ui.screens.SplashScreen
+import com.tu.paquete.ui.screens.DetalleRecetaScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -106,8 +84,14 @@ class MainActivity : ComponentActivity() {
 
             NavHost(
                 navController = navController,
-                startDestination = Routes.RECETAS
-            ) {
+                startDestination = Routes.SPLASH
+            )
+            {
+                // 🟢 Splash Screen
+                composable(Routes.SPLASH) {
+                    SplashScreen(navController = navController)
+                }
+
                 composable(Routes.LOGIN) {
                     LoginScreen(
                         onLoginSuccess = { uid ->
@@ -293,7 +277,6 @@ class MainActivity : ComponentActivity() {
                         onGoBackToInicio = { navController.navigate("recetas") }
                     )
                 }
-<<<<<<< HEAD
                 composable("formulario_proveedor") {
                     FormularioProveedorScreen(
                         userId = userId,
@@ -372,9 +355,6 @@ class MainActivity : ComponentActivity() {
                         onBack = { navController.popBackStack() }
                     )
                 }
-=======
-
->>>>>>> c5439917de959dea419d1924057c9d669d31df3c
             }
 
             }

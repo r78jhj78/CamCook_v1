@@ -3,21 +3,27 @@ package com.example.pruebafastapiconbuscadorylikes.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.google.firebase.firestore.FirebaseFirestore
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleProveedorScreen(
     uid: String,
     onBack: () -> Unit
 ) {
+    val camcookColor = Color(0xFFFAA935)
+    val accentColor = Color(0xFF8C7B6B)
+    val backgroundColor = Color(0xFFF6F6F6)
+    val cardColor = Color(0xFFFFF3E0)
+
     val db = FirebaseFirestore.getInstance()
     var proveedor by remember { mutableStateOf<Map<String, Any>?>(null) }
     var productos by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
@@ -38,20 +44,34 @@ fun DetalleProveedorScreen(
     }
 
     Scaffold(
+        containerColor = backgroundColor,
         topBar = {
             TopAppBar(
-                title = { Text("📄 Detalle del Proveedor") },
+                title = {
+                    Text(
+                        "📄 Detalle del Proveedor",
+                        color = accentColor,
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = accentColor
+                        )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = camcookColor
+                )
             )
         }
     ) { padding ->
         if (cargando) {
             Box(Modifier.fillMaxSize(), Alignment.Center) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = camcookColor)
             }
         } else {
             proveedor?.let { prov ->
@@ -62,29 +82,50 @@ fun DetalleProveedorScreen(
                         .fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("🏪 Nombre: ${prov["nombre"]}")
-                    Text("📞 Teléfono: ${prov["telefono"]}")
-                    Text("🧺 Tipo de proveedor: ${prov["tipoProveedor"]}")
-                    Text("📜 Descripción: ${prov["descripcion"]}")
-                    Text("🌐 Imagen: ${prov["imagen"] ?: "No disponible"}")
-                    Text("🕓 Estado actual: ${prov["estado_validacion"]}")
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = cardColor),
+                        elevation = CardDefaults.cardElevation(4.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text("🏪 Nombre: ${prov["nombre"]}", color = accentColor)
+                            Text("📞 Teléfono: ${prov["telefono"]}", color = accentColor)
+                            Text("🧺 Tipo de proveedor: ${prov["tipoProveedor"]}", color = accentColor)
+                            Text("📜 Descripción: ${prov["descripcion"]}", color = accentColor)
+                            Text("🌐 Imagen: ${prov["imagen"] ?: "No disponible"}", color = accentColor)
+                            Text("🕓 Estado actual: ${prov["estado_validacion"]}", color = accentColor)
+                        }
+                    }
 
-                    Divider()
+                    Divider(thickness = 1.dp, color = accentColor)
 
-                    Text("📦 Productos publicados:", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "📦 Productos publicados:",
+                        style = MaterialTheme.typography.titleMedium.copy(color = accentColor)
+                    )
 
                     if (productos.isEmpty()) {
-                        Text("No tiene productos registrados.")
+                        Text("No tiene productos registrados.", color = accentColor)
                     } else {
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(productos) { prod ->
-                                Card(Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(2.dp)) {
-                                    Column(Modifier.padding(8.dp)) {
-                                        Text("🍽️ Nombre: ${prod["nombre"]}")
-                                        Text("💰 Precio: ${prod["precio"]}")
-                                        Text("📂 Tipo: ${prod["tipo"]}")
-                                        if (prod["cantidad"] != null) Text("📦 Cantidad: ${prod["cantidad"]}")
-                                        if (prod["unidad"] != null) Text("⚖️ Unidad: ${prod["unidad"]}")
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(containerColor = cardColor),
+                                    elevation = CardDefaults.cardElevation(2.dp),
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Column(Modifier.padding(12.dp)) {
+                                        Text("🍽️ Nombre: ${prod["nombre"]}", color = accentColor)
+                                        Text("💰 Precio: ${prod["precio"]}", color = accentColor)
+                                        Text("📂 Tipo: ${prod["tipo"]}", color = accentColor)
+                                        prod["cantidad"]?.let {
+                                            Text("📦 Cantidad: $it", color = accentColor)
+                                        }
+                                        prod["unidad"]?.let {
+                                            Text("⚖️ Unidad: $it", color = accentColor)
+                                        }
                                     }
                                 }
                             }
@@ -103,7 +144,11 @@ fun DetalleProveedorScreen(
                                     mensaje = if (it) "✅ Aprobado correctamente" else "❌ Error al aprobar"
                                 }
                             },
-                            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.primary)
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = camcookColor,
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(10.dp)
                         ) {
                             Text("Aprobar")
                         }
@@ -113,18 +158,26 @@ fun DetalleProveedorScreen(
                                 actualizarEstado(db, uid, "rechazado") {
                                     mensaje = if (it) "🚫 Rechazado correctamente" else "❌ Error al rechazar"
                                 }
-                            }
+                            },
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = accentColor
+                            ),
+                            shape = RoundedCornerShape(10.dp)
                         ) {
                             Text("Rechazar")
                         }
                     }
 
                     if (mensaje.isNotEmpty()) {
-                        Text(mensaje, color = MaterialTheme.colorScheme.primary)
+                        Text(
+                            mensaje,
+                            color = if (mensaje.contains("✅")) Color(0xFF388E3C) else Color(0xFFD32F2F),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
                 }
             } ?: Box(Modifier.fillMaxSize(), Alignment.Center) {
-                Text("❌ No se encontró el proveedor.")
+                Text("❌ No se encontró el proveedor.", color = accentColor)
             }
         }
     }
@@ -136,3 +189,4 @@ private fun actualizarEstado(db: FirebaseFirestore, uid: String, estado: String,
         .addOnSuccessListener { onResult(true) }
         .addOnFailureListener { onResult(false) }
 }
+
