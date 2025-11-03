@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">PruebaFastApiConBuscadorYLikes</string>
+    <string name="default_web_client_id">163492793985-qanbr305ue8jsuj3f9t6hiogqehs3dqi.apps.googleusercontent.com</string>
 </resources>

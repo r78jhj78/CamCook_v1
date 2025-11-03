@@ -44,10 +44,11 @@ import androidx.core.content.ContextCompat
 import androidx.camera.view.PreviewView
 import com.example.pruebafastapiconbuscadorylikes.auth.AuthManager
 import com.example.pruebafastapiconbuscadorylikes.data.manager.ValidacionAdminScreen
-import com.example.pruebafastapiconbuscadorylikes.data.network.ViewRequest
 import com.example.pruebafastapiconbuscadorylikes.model.Receta
+import com.example.pruebafastapiconbuscadorylikes.model.ViewRequest
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.CameraScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.DetalleProveedorScreen
+import com.example.pruebafastapiconbuscadorylikes.ui.screens.FavoritosScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.FormularioProductosIngredientesScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.FormularioProductosRecetaScreen
 import com.example.pruebafastapiconbuscadorylikes.ui.screens.FormularioProveedorScreen
@@ -355,6 +356,20 @@ class MainActivity : ComponentActivity() {
                         onBack = { navController.popBackStack() }
                     )
                 }
+
+                composable("favoritos") {
+                    FavoritosScreen(
+                        navController = navController,
+                        viewModel = viewModel,
+                        userId = userId,
+                        onRecetaClick = { receta ->
+                            // 🔹 Usar la ruta correcta
+                            navController.navigate("detalle_receta/${receta.id}")
+                        },
+                        onGoBack = { navController.popBackStack() }
+                    )
+                }
+
             }
 
             }

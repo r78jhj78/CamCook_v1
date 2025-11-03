@@ -1,16 +1,14 @@
 package com.example.pruebafastapiconbuscadorylikes.data.network
 import com.example.pruebafastapiconbuscadorylikes.model.ApiResponse
+import com.example.pruebafastapiconbuscadorylikes.model.IdsResponse
+import com.example.pruebafastapiconbuscadorylikes.model.InteraccionesResponse
+import com.example.pruebafastapiconbuscadorylikes.model.LikeRequest
+import com.example.pruebafastapiconbuscadorylikes.model.LikeResponse
 import com.example.pruebafastapiconbuscadorylikes.model.Receta
+import com.example.pruebafastapiconbuscadorylikes.model.ViewRequest
 import retrofit2.http.*
 
-data class LikeRequest(val uid: String)
-data class ViewRequest(val uid: String)
-data class LikeResponse(val message: String)
-data class IdsResponse(val ids: List<String>)
-data class InteraccionesResponse(
-    val vistas: List<Receta>,
-    val likes: List<Receta>
-)
+
 
 
 interface ApiService {

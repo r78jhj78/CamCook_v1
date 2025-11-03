@@ -1,5 +1,6 @@
 package com.example.pruebafastapiconbuscadorylikes.auth
 
+import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,6 +21,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pruebafastapiconbuscadorylikes.R
@@ -34,12 +36,14 @@ fun LoginScreen(
     onLoginSuccess: (String) -> Unit,
     onNavigateToRegister: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
 
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
+    var passwordVisible by remember { mutableStateOf(false) }
+    val sharedPref = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+    var email by remember { mutableStateOf(sharedPref.getString("saved_email", "") ?: "") }
 
     val googleSignInClient = GoogleSignIn.getClient(
         context,
@@ -56,15 +60,15 @@ fun LoginScreen(
         try {
             val account = task.getResult(ApiException::class.java)
             val credential = GoogleAuthProvider.getCredential(account.idToken, null)
-            auth.signInWithCredential(credential)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        val uid = auth.currentUser?.uid ?: ""
-                        onLoginSuccess(uid)
-                    } else {
-                        error = "❌ No se pudo iniciar sesión con Google"
-                    }
+            AuthManager.loginWithGoogle(
+                credential,
+                onSuccess = { uid ->
+                    onLoginSuccess(uid)
+                },
+                onError = { msg ->
+                    error = msg
                 }
+            )
         } catch (e: Exception) {
             error = "⚠️ Error: ${e.localizedMessage}"
         }
@@ -158,10 +162,10 @@ fun LoginScreen(
                 color = Color.Black,
                 modifier = Modifier.fillMaxWidth()
             )
+
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(55.dp),
@@ -170,7 +174,22 @@ fun LoginScreen(
                     focusedBorderColor = Color(0xFFFAA935),
                     unfocusedBorderColor = Color.LightGray,
                     cursorColor = Color.Black
-                )
+                ),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    val icon = if (passwordVisible) {
+                        painterResource(id = R.drawable.ic_visibility_off) // 👁️ cerrado
+                    } else {
+                        painterResource(id = R.drawable.ic_visibility) // 👁️ abierto
+                    }
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(
+                            painter = icon,
+                            contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña",
+                            tint = Color.Gray
+                        )
+                    }
+                }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -187,7 +206,15 @@ fun LoginScreen(
                     AuthManager.loginUser(
                         trimmedEmail,
                         trimmedPassword,
-                        onSuccess = { uid -> onLoginSuccess(uid) },
+                        onSuccess = { uid ->
+                            val sharedPref = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                            with(sharedPref.edit()) {
+                                putString("saved_email", trimmedEmail)
+                                apply()
+                            }
+
+                            onLoginSuccess(uid)
+                        },
                         onError = { msg -> error = msg }
                     )
                 },

@@ -19,6 +19,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pruebafastapiconbuscadorylikes.R
@@ -35,7 +36,7 @@ fun RegisterScreen(
     var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
-
+    var passwordVisible by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val buttonHeight by animateDpAsState(targetValue = if (loading) 45.dp else 50.dp, label = "buttonHeight")
@@ -159,10 +160,11 @@ fun RegisterScreen(
                         color = Color.Black,
                         modifier = Modifier.fillMaxWidth()
                     )
+
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
-                        visualTransformation = PasswordVisualTransformation(),
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(55.dp),
@@ -171,7 +173,21 @@ fun RegisterScreen(
                             focusedBorderColor = Color(0xFFFAA935),
                             unfocusedBorderColor = Color.LightGray,
                             cursorColor = Color.Black
-                        )
+                        ),
+                        trailingIcon = {
+                            val icon = if (passwordVisible) {
+                                painterResource(id = R.drawable.ic_visibility_off) // 👁️ cerrado
+                            } else {
+                                painterResource(id = R.drawable.ic_visibility) // 👁️ abierto
+                            }
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    painter = icon,
+                                    contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña",
+                                    tint = Color.Gray
+                                )
+                            }
+                        }
                     )
                 }
             }

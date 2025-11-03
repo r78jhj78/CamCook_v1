@@ -57,6 +57,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.firebase.crashlytics.buildtools)
+    implementation(libs.androidx.tools.core)
 
     // Test
     testImplementation(libs.junit)
@@ -121,6 +122,7 @@ dependencies {
 // o la última versión estable
     implementation("androidx.activity:activity-compose:1.7.2")
 
+    implementation("com.android.volley:volley:1.2.1")
 
 
 }

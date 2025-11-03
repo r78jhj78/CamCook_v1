@@ -88,6 +88,44 @@ object ValidacionManager {
         }
     }
 
+    suspend fun aprobarProveedor(userId: String): Boolean {
+        return try {
+            val ok = actualizarEstadoProveedor(userId, "aprobado")
+            if (!ok) return false
+
+            val userRef = db.collection("usuarios").document(userId)
+            val userDoc = userRef.get().await()
+
+            if (userDoc.exists()) {
+                val rolActual = userDoc.get("rol")
+                val nuevoRol = when (rolActual) {
+                    is String -> listOf(rolActual, "proveedor")
+                    is List<*> -> {
+                        val lista = rolActual.toMutableList()
+                        if (!lista.contains("proveedor")) lista.add("proveedor")
+                        lista
+                    }
+                    else -> listOf("usuario", "proveedor")
+                }
+
+                userRef.update("rol", nuevoRol).await()
+            }
+
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    suspend fun rechazarProveedor(userId: String, motivo: String): Boolean {
+        return actualizarEstadoProveedor(userId, "rechazado", motivo)
+    }
+
+    suspend fun marcarPendienteProveedor(userId: String): Boolean {
+        return actualizarEstadoProveedor(userId, "pendiente")
+    }
+
     suspend fun obtenerProveedoresPendientes(): List<Map<String, Any>> {
         return try {
             val snap = db.collection("proveedores")
@@ -114,15 +152,27 @@ object ValidacionManager {
         }
     }
 
-    suspend fun aprobarProveedor(userId: String): Boolean {
-        return actualizarEstadoProveedor(userId, "aprobado")
+    suspend fun asegurarRolProveedor(userId: String) {
+        try {
+            val userRef = db.collection("usuarios").document(userId)
+            val userDoc = userRef.get().await()
+
+            if (userDoc.exists()) {
+                val rolActual = userDoc.get("rol")
+                val nuevoRol = when (rolActual) {
+                    is String -> if (rolActual != "proveedor") listOf(rolActual, "proveedor") else listOf("proveedor")
+                    is List<*> -> {
+                        val lista = rolActual.toMutableList()
+                        if (!lista.contains("proveedor")) lista.add("proveedor")
+                        lista
+                    }
+                    else -> listOf("usuario", "proveedor")
+                }
+                userRef.update("rol", nuevoRol).await()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
-    suspend fun rechazarProveedor(userId: String, motivo: String): Boolean {
-        return actualizarEstadoProveedor(userId, "rechazado", motivo)
-    }
-
-    suspend fun marcarPendienteProveedor(userId: String): Boolean {
-        return actualizarEstadoProveedor(userId, "pendiente")
-    }
 }

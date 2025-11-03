@@ -125,7 +125,7 @@ fun FormularioProveedorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("🧾 Registro de Proveedor", color = Color.Black) },
+                title = { Text("🧾 Registro de Proveedor", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = Color.Black)
@@ -154,7 +154,7 @@ fun FormularioProveedorScreen(
 
                     OutlinedTextField(
                         value = nombre,
-                        onValueChange = { nombre = it.take(31) },
+                        onValueChange = { nombre = it.take(200) },
                         label = { Text("Nombre del negocio") },
                         placeholder = { Text("Ej: Sabores Andinos") },
                         singleLine = true,
@@ -168,9 +168,8 @@ fun FormularioProveedorScreen(
                     OutlinedTextField(
                         value = descripcion,
                         onValueChange = { nuevo ->
-                            // Limitar a 5 líneas
                             val lineCount = nuevo.count { it == '\n' } + 1
-                            if (lineCount <= 5 && nuevo.length <= 500) { // 500 caracteres como máximo aproximado
+                            if (lineCount <= 5 && nuevo.length <= 500) {
                                 descripcion = nuevo
                             }
                         },
@@ -290,22 +289,103 @@ fun FormularioProveedorScreen(
 
                 // ✅ Si ya está aprobado
                 estadoValidacion == "aprobado" -> {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0))
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        Text(
+                            "✅ Tu cuenta de proveedor fue aprobada",
+                            color = accentColor,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "¿Qué deseas publicar?",
+                            color = camcookColor,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(Modifier.height(24.dp))
+
+                        // 🧂 Tarjeta Ingredientes
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp)
+                                .clickable { navController.navigate("formulario_productos_ingredientes") },
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1)),
+                            shape = RoundedCornerShape(20.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                         ) {
-                            Text("✅ Tu cuenta de proveedor fue aprobada", color = accentColor)
-                            Text("¿Qué deseas publicar?", color = camcookColor)
-                            Button(onClick = { navController.navigate("formulario_productos_ingredientes") }) {
-                                Text("🧂 Ingredientes")
+                            Row(
+                                modifier = Modifier
+                                    .padding(20.dp)
+                                    .fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.ShoppingCart,
+                                    contentDescription = "Ingredientes",
+                                    tint = camcookColor,
+                                    modifier = Modifier.size(42.dp)
+                                )
+                                Spacer(Modifier.width(16.dp))
+                                Column {
+                                    Text(
+                                        "🧂 Publicar Ingredientes",
+                                        color = Color.Black,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = MaterialTheme.typography.titleMedium.fontSize
+                                    )
+                                    Text(
+                                        "Vende tus ingredientes individuales.",
+                                        color = Color.Gray,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
                             }
-                            Button(onClick = { navController.navigate("formulario_productos_receta") }) {
-                                Text("🍽 Recetas completas")
+                        }
+
+                        Spacer(Modifier.height(16.dp))
+
+                        // 🍽 Tarjeta Recetas completas
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp)
+                                .clickable { navController.navigate("formulario_productos_receta") },
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEFD5)),
+                            shape = RoundedCornerShape(20.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .padding(20.dp)
+                                    .fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.Restaurant,
+                                    contentDescription = "Recetas",
+                                    tint = camcookColor,
+                                    modifier = Modifier.size(42.dp)
+                                )
+                                Spacer(Modifier.width(16.dp))
+                                Column {
+                                    Text(
+                                        "🍽 Publicar Recetas Completas",
+                                        color = Color.Black,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = MaterialTheme.typography.titleMedium.fontSize
+                                    )
+                                    Text(
+                                        "Vende la receta lista para disfrutar.",
+                                        color = Color.Gray,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
                             }
                         }
                     }

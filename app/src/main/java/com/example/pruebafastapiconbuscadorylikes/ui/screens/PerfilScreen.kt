@@ -17,10 +17,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.pruebafastapiconbuscadorylikes.auth.AuthManager
 import com.example.pruebafastapiconbuscadorylikes.ui.RecetasViewModel
 import com.google.firebase.auth.FirebaseAuth
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,6 +37,7 @@ fun PerfilScreen(
     val accentColor = Color(0xFF8C7B6B)
     val backgroundColor = Color(0xFFF6F6F6)
     val beigeColor = Color(0xFFE5D9C5)
+    val context = LocalContext.current
 
     if (userId == "viewer") {
         Box(
@@ -158,7 +161,7 @@ fun PerfilScreen(
                     }
 
                     // Cerrar sesión
-                    Button(
+                    /*Button(
                         onClick = { showDialog = true },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
                         modifier = Modifier.fillMaxWidth()
@@ -166,7 +169,67 @@ fun PerfilScreen(
                         Icon(Icons.Default.Logout, contentDescription = null, tint = Color.White)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Cerrar sesión", color = Color.White)
+                    }*/
+
+                    /*Button(
+                        onClick = { showDialog = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Logout, contentDescription = null, tint = Color.White)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Cerrar sesión", color = Color.White)
+                    }*/
+
+                    /*Button(
+                        onClick = {
+                            // 🔄 Cambiar cuenta: cerrar sesión, pero sin borrar SharedPreferences todavía
+                            val context = navController.context
+                            FirebaseAuth.getInstance().signOut()
+
+                            // Opcional: podrías limpiar solo el token, pero mantener SharedPreferences intactas
+                            navController.navigate("login") {
+                                popUpTo("marketplace") { inclusive = true }
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = camcookColor),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = Color.White)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Cambiar cuenta", color = Color.White)
                     }
+*/
+
+                    // 🔴 Cerrar sesión normal
+                    Button(
+                        onClick = {
+                            showDialog = true
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Logout, contentDescription = null, tint = Color.White)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Cerrar sesión", color = Color.White)
+                    }
+
+// 🔄 Botón para cambiar cuenta
+                    Button(
+                        onClick = {
+                            AuthManager.switchAccount(context)
+                            navController.navigate("login") {
+                                popUpTo("marketplace") { inclusive = true }
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFAA935)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = Color.White)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Cambiar cuenta", color = Color.White)
+                    }
+
 
                     // Diálogo de confirmación
                     if (showDialog) {

@@ -149,11 +149,7 @@ fun RecetasScreen(
 
                 IconButton(
                     onClick = {
-                        if (userId == "viewer") {
-                            navController.navigate(Routes.LOGIN)
-                        } else {
-                            shouldRequestPermission = true
-                        }
+                        shouldRequestPermission = true
                     },
                     modifier = Modifier.weight(1f)
                 ) {
@@ -173,7 +169,13 @@ fun RecetasScreen(
                     )
                 }
 
-                IconButton(onClick = onGoToFavorites, modifier = Modifier.weight(1f)) {
+                IconButton(onClick = {
+                    if (userId == "viewer") {
+                        navController.navigate(Routes.LOGIN)
+                    } else {
+                        navController.navigate("favoritos") // Nueva ruta para favoritos
+                    }
+                }, modifier = Modifier.weight(1f)) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Default.Favorite, contentDescription = "Favoritos")
                         Text("Favoritos", style = MaterialTheme.typography.labelSmall)
@@ -316,7 +318,7 @@ fun RecetaCard(
         ) {
             // Imagen superior responsiva
             AsyncImage(
-                model = receta.imagen_final_url,
+                model = receta.mainImageUrl.ifEmpty { receta.imagenUrl },
                 contentDescription = receta.titulo,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -358,7 +360,7 @@ fun RecetaCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                InfoChipWithIcon(Icons.Default.AccessTime, "${receta.tiempoPreparacion ?: "N/A"} min", Color(0xFF2196F3))
+                InfoChipWithIcon(Icons.Default.AccessTime, receta.tiempoFormateado, Color(0xFF2196F3))
                 InfoChipWithIcon(Icons.Default.Restaurant, "${receta.porciones ?: 0} porciones", Color(0xFF4CAF50))
                 InfoChipWithIcon(Icons.Default.Whatshot, "${receta.calorias ?: 0} cal", Color(0xFFFF5722))
             }

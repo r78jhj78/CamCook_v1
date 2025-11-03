@@ -32,7 +32,8 @@ import java.io.File
 @Composable
 fun CameraScreen(
     navController: NavController,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    rol: String = "viewer"
 ) {
     val camcookColor = Color(0xFFFAA935)
     val accentColor = Color(0xFF8C7B6B)

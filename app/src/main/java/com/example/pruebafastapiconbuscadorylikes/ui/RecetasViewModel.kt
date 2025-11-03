@@ -7,17 +7,17 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pruebafastapiconbuscadorylikes.data.model.Usuario
-import com.example.pruebafastapiconbuscadorylikes.data.network.InteraccionesResponse
 import com.example.pruebafastapiconbuscadorylikes.model.Receta
 import com.example.pruebafastapiconbuscadorylikes.data.network.RetrofitClient
-import com.example.pruebafastapiconbuscadorylikes.data.network.LikeRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
-import com.example.pruebafastapiconbuscadorylikes.data.network.ViewRequest
 import com.example.pruebafastapiconbuscadorylikes.model.Ingrediente
+import com.example.pruebafastapiconbuscadorylikes.model.InteraccionesResponse
+import com.example.pruebafastapiconbuscadorylikes.model.LikeRequest
+import com.example.pruebafastapiconbuscadorylikes.model.ViewRequest
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -49,7 +49,8 @@ class RecetasViewModel : ViewModel() {
 
     private val listeners = mutableListOf<ListenerRegistration>()
     private val firestore = FirebaseFirestore.getInstance()
-
+    private val _recetasFavoritas = MutableStateFlow<List<Receta>>(emptyList())
+    val recetasFavoritas: StateFlow<List<Receta>> = _recetasFavoritas
 
     init {
         escucharTodasRecetas()
@@ -145,7 +146,10 @@ class RecetasViewModel : ViewModel() {
     }
 
     fun escucharTodasRecetas() {
-        val recetasRef = FirebaseFirestore.getInstance().collection("recetas")
+        val recetasRef = FirebaseFirestore.getInstance()
+            .collection("recetas")
+            .whereEqualTo("estado", "publicada") // 🔹 solo publicadas
+
         val listener = recetasRef.addSnapshotListener { snapshot, _ ->
             if (snapshot != null && !bloqueandoSnapshot) {
                 val recetasActualizadas = snapshot.documents.mapNotNull { doc ->
@@ -156,7 +160,6 @@ class RecetasViewModel : ViewModel() {
         }
         listeners.add(listener)
     }
-
 
     override fun onCleared() {
         super.onCleared()
@@ -234,6 +237,7 @@ class RecetasViewModel : ViewModel() {
 
     fun escucharTodosIngredientes() {
         firestore.collection("ingredientes")
+            .whereEqualTo("estado_validacion", "aprobado")
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     println("❌ Error al escuchar ingredientes: ${error.message}")
@@ -281,7 +285,10 @@ class RecetasViewModel : ViewModel() {
     fun cargarRecetas() {
         viewModelScope.launch {
             try {
-                val snapshot = firestore.collection("recetas").get().await()
+                val snapshot = firestore.collection("recetas")
+                    .whereEqualTo("estado", "publicada") // 🔹 solo las publicadas
+                    .get().await()
+
                 val recetasLista = snapshot.documents.mapNotNull { doc ->
                     doc.toObject(Receta::class.java)?.copy(id = doc.id)
                 }
@@ -292,5 +299,15 @@ class RecetasViewModel : ViewModel() {
         }
     }
 
+    fun escucharRecetasFavoritas(userId: String) {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("recetas")
+            .whereGreaterThanOrEqualTo("liked_by.$userId", true)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) return@addSnapshotListener
+                val lista = snapshot.documents.mapNotNull { it.toObject(Receta::class.java)?.copy(id = it.id) }
+                _recetasFavoritas.value = lista
+            }
+    }
 }
 
